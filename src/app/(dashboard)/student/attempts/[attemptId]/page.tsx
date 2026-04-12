@@ -1,21 +1,35 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 
 import {
+  buildAttemptAutosaveFingerprint,
+  buildAttemptAutosaveIndicator,
   buildAttemptTimerViewModel,
   buildAttemptQuestionNavigationItems,
+  createAttemptAutosaveSnapshot,
   createAttemptWorkspaceState,
   goToAttemptQuestion,
   goToNextAttemptQuestion,
   goToPreviousAttemptQuestion,
   isAttemptQuestionAnswered,
   listStudentAttemptBootstrapRecords,
+  parseAttemptAutosaveSnapshot,
+  recoverAttemptWorkspaceState,
   resolveAttemptSessionEntry,
+  serializeAttemptAutosaveSnapshot,
   setAttemptSingleSelectAnswer,
   setAttemptTextAnswer,
+  toAttemptAutosaveStorageKey,
   toggleAttemptMarkedForReview,
   toggleAttemptMultiSelectAnswer,
+  type AttemptAutosaveStatus,
+  type AttemptAutosaveTone,
 } from "../../../../../modules/attempts";
 
 type StudentAttemptPageProps = {
@@ -198,6 +212,55 @@ const questionCardStyle: CSSProperties = {
   boxShadow: "0 18px 40px rgba(16, 35, 60, 0.08)",
 };
 
+type AttemptAutosaveState = {
+  status: AttemptAutosaveStatus;
+  lastSavedAt: Date | null;
+  recoveredAt: Date | null;
+  failureMessage: string | null;
+};
+
+const AUTOSAVE_DEBOUNCE_MS = 700;
+
+const createInitialAutosaveState = (): AttemptAutosaveState => ({
+  status: "idle",
+  lastSavedAt: null,
+  recoveredAt: null,
+  failureMessage: null,
+});
+
+const getAutosavePillColors = (
+  tone: AttemptAutosaveTone,
+): {
+  background: string;
+  color: string;
+} => {
+  if (tone === "positive") {
+    return {
+      background: "rgba(15, 118, 110, 0.12)",
+      color: "#0f766e",
+    };
+  }
+
+  if (tone === "warning") {
+    return {
+      background: "rgba(217, 119, 6, 0.12)",
+      color: "#b45309",
+    };
+  }
+
+  if (tone === "critical") {
+    return {
+      background: "rgba(180, 83, 9, 0.14)",
+      color: "#b45309",
+    };
+  }
+
+  return {
+    background: "rgba(71, 85, 105, 0.12)",
+    color: "#334155",
+  };
+};
+
 const formatDateTime = (value: Date): string =>
   new Intl.DateTimeFormat("en-IN", {
     day: "2-digit",
@@ -309,24 +372,145 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
     params.attemptId,
     now,
   );
+  const attemptSession = sessionEntry.session;
   const [workspaceState, setWorkspaceState] = useState(() =>
-    sessionEntry.session === null
-      ? null
-      : createAttemptWorkspaceState(sessionEntry.session),
+    attemptSession === null ? null : createAttemptWorkspaceState(attemptSession),
   );
+  const [autosaveState, setAutosaveState] = useState<AttemptAutosaveState>(
+    createInitialAutosaveState,
+  );
+  const [recoveryReady, setRecoveryReady] = useState(attemptSession === null);
+  const autosaveFingerprintRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (sessionEntry.session === null) {
+    if (attemptSession === null) {
       setWorkspaceState(null);
+      setAutosaveState(createInitialAutosaveState());
+      setRecoveryReady(true);
+      autosaveFingerprintRef.current = null;
       return;
     }
 
-    setWorkspaceState(createAttemptWorkspaceState(sessionEntry.session));
-  }, [sessionEntry.session?.attemptId]);
+    const baseState = createAttemptWorkspaceState(attemptSession);
+
+    setRecoveryReady(false);
+    setWorkspaceState(baseState);
+    setAutosaveState(createInitialAutosaveState());
+
+    if (typeof window === "undefined") {
+      autosaveFingerprintRef.current = buildAttemptAutosaveFingerprint(
+        attemptSession,
+        baseState,
+      );
+      setRecoveryReady(true);
+      return;
+    }
+
+    try {
+      const storageKey = toAttemptAutosaveStorageKey(attemptSession.attemptId);
+      const snapshot = parseAttemptAutosaveSnapshot(
+        window.localStorage.getItem(storageKey),
+      );
+      const recoveredState = recoverAttemptWorkspaceState(
+        attemptSession.attemptId,
+        attemptSession,
+        snapshot,
+      );
+
+      setWorkspaceState(recoveredState.state);
+      setAutosaveState({
+        status: recoveredState.recovered ? "saved" : "idle",
+        lastSavedAt: recoveredState.savedAt,
+        recoveredAt: recoveredState.recovered ? recoveredState.savedAt : null,
+        failureMessage: null,
+      });
+      autosaveFingerprintRef.current = buildAttemptAutosaveFingerprint(
+        attemptSession,
+        recoveredState.state,
+      );
+    } catch (error) {
+      const failureMessage =
+        error instanceof Error
+          ? error.message
+          : "Local recovery storage is unavailable in this browser context.";
+
+      setWorkspaceState(baseState);
+      setAutosaveState({
+        status: "failed",
+        lastSavedAt: null,
+        recoveredAt: null,
+        failureMessage,
+      });
+      autosaveFingerprintRef.current = buildAttemptAutosaveFingerprint(
+        attemptSession,
+        baseState,
+      );
+    } finally {
+      setRecoveryReady(true);
+    }
+  }, [attemptSession?.attemptId]);
+
+  useEffect(() => {
+    if (attemptSession === null || workspaceState === null || !recoveryReady) {
+      return;
+    }
+
+    const nextFingerprint = buildAttemptAutosaveFingerprint(
+      attemptSession,
+      workspaceState,
+    );
+
+    if (nextFingerprint === autosaveFingerprintRef.current) {
+      return;
+    }
+
+    setAutosaveState((state) => ({
+      ...state,
+      status: "saving",
+      failureMessage: null,
+    }));
+
+    const timeoutId = window.setTimeout(() => {
+      try {
+        const savedAt = new Date();
+        const snapshot = createAttemptAutosaveSnapshot(
+          attemptSession.attemptId,
+          attemptSession,
+          workspaceState,
+          savedAt,
+        );
+
+        window.localStorage.setItem(
+          toAttemptAutosaveStorageKey(attemptSession.attemptId),
+          serializeAttemptAutosaveSnapshot(snapshot),
+        );
+        autosaveFingerprintRef.current = nextFingerprint;
+        setAutosaveState((state) => ({
+          ...state,
+          status: "saved",
+          lastSavedAt: savedAt,
+          failureMessage: null,
+        }));
+      } catch (error) {
+        setAutosaveState((state) => ({
+          ...state,
+          status: "failed",
+          failureMessage:
+            error instanceof Error
+              ? error.message
+              : "Local recovery storage is unavailable in this browser context.",
+        }));
+      }
+    }, AUTOSAVE_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [attemptSession?.attemptId, recoveryReady, workspaceState]);
 
   return (
     <div style={pageStyle}>
-      {sessionEntry.session === null ? (
+      {attemptSession === null ? (
         <>
           <section style={heroStyle(true)}>
             <span
@@ -378,23 +562,36 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
       ) : (
         workspaceState !== null && (() => {
           const timer = buildAttemptTimerViewModel(
-            sessionEntry.session.startedAt,
-            sessionEntry.session.expiresAt,
+            attemptSession.startedAt,
+            attemptSession.expiresAt,
             now,
           );
           const currentQuestion =
-            sessionEntry.session.questions[workspaceState.currentQuestionIndex]!;
+            attemptSession.questions[workspaceState.currentQuestionIndex]!;
           const currentDraft = workspaceState.drafts[currentQuestion.examQuestionId]!;
           const navigationItems = buildAttemptQuestionNavigationItems(
-            sessionEntry.session,
+            attemptSession,
             workspaceState,
           );
-          const questionCount = sessionEntry.session.questions.length;
+          const questionCount = attemptSession.questions.length;
           const answeredCount = navigationItems.filter((item) => item.isAnswered).length;
           const markedCount = navigationItems.filter(
             (item) => item.isMarkedForReview,
           ).length;
           const currentQuestionAnswered = isAttemptQuestionAnswered(currentDraft);
+          const autosaveIndicator = buildAttemptAutosaveIndicator(
+            autosaveState.status,
+            autosaveState.failureMessage,
+          );
+          const autosaveColors = getAutosavePillColors(autosaveIndicator.tone);
+          const autosaveDetail =
+            autosaveState.status === "saved" && autosaveState.lastSavedAt !== null
+              ? `${autosaveIndicator.detail} Last saved ${formatDateTime(autosaveState.lastSavedAt)}.`
+              : autosaveState.status === "saving" && autosaveState.lastSavedAt !== null
+                ? `Saving latest changes. Last saved ${formatDateTime(autosaveState.lastSavedAt)}.`
+                : autosaveState.recoveredAt !== null
+                  ? `${autosaveIndicator.detail} Recovered on entry from the local save at ${formatDateTime(autosaveState.recoveredAt)}.`
+                  : autosaveIndicator.detail;
 
           return (
             <div style={attemptCanvasStyle}>
@@ -406,16 +603,16 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
                         In Progress
                       </span>
                       <span style={statusPillStyle("rgba(71, 85, 105, 0.12)", "#334155")}>
-                        {sessionEntry.session.examCode}
+                        {attemptSession.examCode}
                       </span>
                     </div>
                     <div style={{ display: "grid", gap: "4px" }}>
                       <h2 style={{ margin: 0, fontSize: "1.5rem", lineHeight: 1.15, color: "#10233c" }}>
-                        {sessionEntry.session.examTitle}
+                        {attemptSession.examTitle}
                       </h2>
                       <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.6 }}>
-                        Attempt {sessionEntry.session.attemptId} started on{" "}
-                        {formatDateTime(sessionEntry.session.startedAt)} and expires at{" "}
+                        Attempt {attemptSession.attemptId} started on{" "}
+                        {formatDateTime(attemptSession.startedAt)} and expires at{" "}
                         {timer.expiresAtLabel}.
                       </p>
                     </div>
@@ -460,8 +657,13 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
 
                 <div style={topBarRowStyle}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
-                    <span style={statusPillStyle("rgba(14, 116, 144, 0.12)", "#0f5f73")}>
-                      Local draft state
+                    <span
+                      style={statusPillStyle(
+                        autosaveColors.background,
+                        autosaveColors.color,
+                      )}
+                    >
+                      {autosaveIndicator.label}
                     </span>
                     <span style={statusPillStyle("rgba(15, 23, 42, 0.08)", "#334155")}>
                       {answeredCount}/{questionCount} answered
@@ -469,12 +671,31 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
                     <span style={statusPillStyle("rgba(217, 119, 6, 0.12)", "#b45309")}>
                       {markedCount} marked
                     </span>
+                    {autosaveState.recoveredAt !== null ? (
+                      <span style={statusPillStyle("rgba(14, 116, 144, 0.12)", "#0f5f73")}>
+                        Recovery restored
+                      </span>
+                    ) : null}
                   </div>
 
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
-                    <p style={{ margin: 0, maxWidth: "520px", color: "#4b647a", lineHeight: 1.6 }}>
-                      {timer.helperText}
-                    </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center" }}>
+                    <div style={{ display: "grid", gap: "4px", maxWidth: "520px" }}>
+                      <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.6 }}>
+                        {timer.helperText}
+                      </p>
+                      <p
+                        style={{
+                          margin: 0,
+                          color:
+                            autosaveIndicator.tone === "critical"
+                              ? "#b45309"
+                              : "#64748b",
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        {autosaveDetail}
+                      </p>
+                    </div>
                     <button
                       type="button"
                       disabled
@@ -774,7 +995,7 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
                                   ? state
                                   : goToPreviousAttemptQuestion(
                                       state,
-                                      sessionEntry.session,
+                                      attemptSession,
                                     ),
                               )
                             }
@@ -808,7 +1029,7 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
                                   ? state
                                   : goToNextAttemptQuestion(
                                       state,
-                                      sessionEntry.session,
+                                      attemptSession,
                                     ),
                               )
                             }
@@ -869,7 +1090,7 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
                                 ? state
                                 : goToAttemptQuestion(
                                     state,
-                                    sessionEntry.session,
+                                    attemptSession,
                                     index,
                                   ),
                             )
@@ -896,7 +1117,7 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
                                 ? state
                                 : goToAttemptQuestion(
                                     state,
-                                    sessionEntry.session,
+                                    attemptSession,
                                     index,
                                   ),
                             )
@@ -973,7 +1194,7 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
                     </div>
 
                     <ul style={{ margin: 0, paddingLeft: "20px", color: "#334155", lineHeight: 1.8 }}>
-                      {sessionEntry.session.instructions.map((instruction) => (
+                      {attemptSession.instructions.map((instruction) => (
                         <li key={instruction}>{instruction}</li>
                       ))}
                     </ul>
