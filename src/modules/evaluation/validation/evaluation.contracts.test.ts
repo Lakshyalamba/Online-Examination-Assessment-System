@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { QUESTION_TYPES } from "../../questions/domain/question.types";
+import { QUESTION_TYPES } from "../../questions/domain/question.types.ts";
 import {
   RESULT_STATUSES,
   canPublishResult,
@@ -10,8 +10,8 @@ import {
   isStudentVisibleResultStatus,
   resolveResultStatusAfterObjectiveGrading,
   transitionResultStatus,
-} from "../domain/result-state";
-import { aggregateResultScores, calculatePercentage } from "../utils/scoring";
+} from "../domain/result-state.ts";
+import { aggregateResultScores, calculatePercentage } from "../utils/scoring.ts";
 
 test("evaluation contracts stay aligned with supported question types", () => {
   assert.deepEqual(QUESTION_TYPES, [

@@ -12,6 +12,7 @@ import type {
   PublishExaminerResultsInput,
   PublishExaminerResultsOutput,
 } from "../domain/examiner-results.types.ts";
+import { formatPercentageLabel } from "./result-presentation.ts";
 
 const EMPTY_RESULTS_STATE = {
   title: "No Results Found",
@@ -69,7 +70,7 @@ const toRow = (item: ExaminerResultOverviewItem): ExaminerResultOverviewRow => (
   exam: `${item.examTitle} (${item.examCode})`,
   student: item.studentName,
   status: item.resultStatus,
-  scoreLabel: `${item.finalScore} (${item.percentage.toFixed(2)}%)`,
+  scoreLabel: `${item.finalScore} (${formatPercentageLabel(item.percentage)})`,
   publishIndicator: getPublishIndicator(item.resultStatus),
   submittedAtIso: item.submittedAt.toISOString(),
   publishedAtIso: item.publishedAt?.toISOString() ?? null,
