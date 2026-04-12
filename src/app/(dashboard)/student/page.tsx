@@ -1,5 +1,12 @@
 import type { CSSProperties } from "react";
 
+import { AssignedExamList } from "../../../components/student/assigned-exam-list";
+import {
+  buildAssignedExamListViewModel,
+  summarizeAssignedExamList,
+  type AssignedExamRecord,
+} from "../../../modules/attempts";
+
 const heroStyle: CSSProperties = {
   display: "grid",
   gap: "20px",
@@ -37,12 +44,6 @@ const metricCardStyle: CSSProperties = {
   boxShadow: "0 18px 36px rgba(16, 35, 60, 0.08)",
 };
 
-const sectionGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-  gap: "20px",
-};
-
 const sectionCardStyle: CSSProperties = {
   display: "grid",
   gap: "18px",
@@ -68,37 +69,119 @@ const sectionTitleStyle: CSSProperties = {
   lineHeight: 1.2,
 };
 
-const metrics = [
+const assignedExamRecords: AssignedExamRecord[] = [
   {
-    label: "Assigned Exams",
-    value: "--",
-    note: "Step 2 will connect the status-aware list and actions.",
+    assignmentId: "assignment-dbms-midterm",
+    examId: "exam-dbms-midterm",
+    examTitle: "DBMS Midterm",
+    examCode: "DBMS-301",
+    durationMinutes: 90,
+    windowStartsAt: new Date("2026-04-14T09:00:00+05:30"),
+    windowEndsAt: new Date("2026-04-14T10:30:00+05:30"),
+    windowStatus: "OPEN",
+    isManuallyBlocked: false,
+    attempt: null,
   },
   {
-    label: "Active Attempts",
-    value: "--",
-    note: "Step 3 and Step 4 will wire resume and attempt entry.",
+    assignmentId: "assignment-network-security",
+    examId: "exam-network-security",
+    examTitle: "Network Security Quiz",
+    examCode: "CNS-214",
+    durationMinutes: 60,
+    windowStartsAt: new Date("2026-04-13T11:00:00+05:30"),
+    windowEndsAt: new Date("2026-04-13T12:00:00+05:30"),
+    windowStatus: "OPEN",
+    isManuallyBlocked: false,
+    attempt: {
+      attemptId: "attempt-network-security-1",
+      status: "IN_PROGRESS",
+      startedAt: new Date("2026-04-13T11:08:00+05:30"),
+      expiresAt: new Date("2026-04-13T12:08:00+05:30"),
+      submittedAt: null,
+    },
   },
   {
-    label: "Published Results",
-    value: "--",
-    note: "Later prompts will fill this summary from student results.",
+    assignmentId: "assignment-os-viva",
+    examId: "exam-os-viva",
+    examTitle: "Operating Systems Viva",
+    examCode: "OS-220",
+    durationMinutes: 45,
+    windowStartsAt: new Date("2026-04-18T09:00:00+05:30"),
+    windowEndsAt: new Date("2026-04-18T09:45:00+05:30"),
+    windowStatus: "UPCOMING",
+    isManuallyBlocked: false,
+    attempt: null,
+  },
+  {
+    assignmentId: "assignment-java-lab",
+    examId: "exam-java-lab",
+    examTitle: "Java Lab Assessment",
+    examCode: "JAVA-118",
+    durationMinutes: 75,
+    windowStartsAt: new Date("2026-04-15T14:00:00+05:30"),
+    windowEndsAt: new Date("2026-04-15T15:15:00+05:30"),
+    windowStatus: "OPEN",
+    isManuallyBlocked: true,
+    attempt: null,
+  },
+  {
+    assignmentId: "assignment-discrete",
+    examId: "exam-discrete",
+    examTitle: "Discrete Mathematics Practice Test",
+    examCode: "MTH-204",
+    durationMinutes: 60,
+    windowStartsAt: new Date("2026-04-10T08:00:00+05:30"),
+    windowEndsAt: new Date("2026-04-10T09:00:00+05:30"),
+    windowStatus: "CLOSED",
+    isManuallyBlocked: false,
+    attempt: {
+      attemptId: "attempt-discrete-1",
+      status: "SUBMITTED",
+      startedAt: new Date("2026-04-10T08:05:00+05:30"),
+      expiresAt: new Date("2026-04-10T09:05:00+05:30"),
+      submittedAt: new Date("2026-04-10T08:56:00+05:30"),
+    },
   },
 ];
 
 export default function StudentDashboardPage() {
+  const assignedExamItems = buildAssignedExamListViewModel(assignedExamRecords);
+  const assignedExamSummary = summarizeAssignedExamList(assignedExamItems);
+  const metrics = [
+    {
+      label: "Assigned Exams",
+      value: String(assignedExamSummary.total),
+      note: "Every row belongs to the signed-in student and keeps action language stable.",
+    },
+    {
+      label: "Action Ready",
+      value: String(assignedExamSummary.actionableCount),
+      note: "Start and Continue rows stay at the top so the next student action is easy to spot.",
+    },
+    {
+      label: "Locked",
+      value: String(assignedExamSummary.lockedCount),
+      note: "Upcoming, blocked, or closed exams remain visible with readable eligibility messaging.",
+    },
+    {
+      label: "Submitted",
+      value: String(assignedExamSummary.submittedCount),
+      note: "Closed attempts stay non-reopenable and wait for later result publication prompts.",
+    },
+  ];
+
   return (
     <div style={{ display: "grid", gap: "24px" }}>
       <section id="overview" style={heroStyle}>
-        <span style={heroBadgeStyle}>Structural Dashboard Entry</span>
+        <span style={heroBadgeStyle}>Assigned Exam Queue</span>
         <div style={{ display: "grid", gap: "10px" }}>
           <h2 style={{ margin: 0, fontSize: "2rem", lineHeight: 1.1 }}>
-            Shared shell wiring is ready for the student flow.
+            Assigned exams now map to stable student actions.
           </h2>
           <p style={{ margin: 0, maxWidth: "760px", lineHeight: 1.7, color: "rgba(247, 251, 253, 0.86)" }}>
-            This route establishes the student dashboard inside the common shell and reserves the primary
-            entry sections for assigned exams and published result summaries without introducing deep data
-            behavior yet.
+            The dashboard now lists assigned exams with clear Start, Continue, Locked, and Submitted states.
+            Actionable rows stay prominent, while locked and closed rows explain why the student cannot enter
+            a new attempt yet.
           </p>
         </div>
       </section>
@@ -124,41 +207,35 @@ export default function StudentDashboardPage() {
         ))}
       </section>
 
-      <section style={sectionGridStyle}>
-        <article id="assigned-exams" style={sectionCardStyle}>
-          <div style={{ display: "grid", gap: "8px" }}>
-            <h2 style={sectionTitleStyle}>Assigned Exams</h2>
-            <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.6 }}>
-              Landing space for the student exam list, status chips, and clear start or continue entry points.
-            </p>
-          </div>
+      <article id="assigned-exams" style={sectionCardStyle}>
+        <div style={{ display: "grid", gap: "8px" }}>
+          <h2 style={sectionTitleStyle}>Assigned Exams</h2>
+          <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.6 }}>
+            Status-aware exam rows keep action language stable and expose the correct student entry point for
+            each assignment.
+          </p>
+        </div>
 
-          <div style={placeholderStyle}>
-            <p style={{ margin: 0, fontWeight: 600 }}>Placeholder ready for assigned exam cards.</p>
-            <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.6 }}>
-              The next prompt can wire list states such as Start, Continue, Locked, and Submitted into this
-              section without changing the shell structure.
-            </p>
-          </div>
-        </article>
+        <AssignedExamList exams={assignedExamItems} />
+      </article>
 
-        <article id="results-summary" style={sectionCardStyle}>
-          <div style={{ display: "grid", gap: "8px" }}>
-            <h2 style={sectionTitleStyle}>Results Summary</h2>
-            <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.6 }}>
-              Reserved area for published result highlights and compact student-facing performance summaries.
-            </p>
-          </div>
+      <article id="results-summary" style={sectionCardStyle}>
+        <div style={{ display: "grid", gap: "8px" }}>
+          <h2 style={sectionTitleStyle}>Results Summary</h2>
+          <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.6 }}>
+            Published result highlights remain a separate section so submitted attempts do not imply immediate
+            result visibility.
+          </p>
+        </div>
 
-          <div style={placeholderStyle}>
-            <p style={{ margin: 0, fontWeight: 600 }}>Placeholder ready for result summary cards.</p>
-            <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.6 }}>
-              Later result work can attach published status, score snapshots, and summary messaging here
-              without restructuring the route entry page.
-            </p>
-          </div>
-        </article>
-      </section>
+        <div style={placeholderStyle}>
+          <p style={{ margin: 0, fontWeight: 600 }}>Published result summaries land here later.</p>
+          <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.6 }}>
+            Step 2 keeps result display shallow while the assigned exam list focuses on clear action states
+            and non-actionable locked or submitted messaging.
+          </p>
+        </div>
+      </article>
     </div>
   );
 }
