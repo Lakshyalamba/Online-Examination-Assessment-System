@@ -6,5 +6,6 @@ export * from "./domain/scoring.types";
 export * from "./utils/grading-workspace";
 export * from "./utils/objective-grading";
 export * from "./utils/pending-review-queue";
+export * from "./utils/review-completion";
 export * from "./utils/result-aggregation";
 export * from "./utils/scoring";
