@@ -8,28 +8,41 @@ import {
 } from "react";
 
 import {
+  applyAttemptAutoSubmit,
   buildAttemptAutosaveFingerprint,
   buildAttemptAutosaveIndicator,
   buildAttemptTimerViewModel,
   buildAttemptQuestionNavigationItems,
+  buildAttemptSubmissionPresentation,
+  buildAttemptSubmissionSummary,
+  closeAttemptSubmissionConfirmation,
+  completeAttemptSubmission,
   createAttemptAutosaveSnapshot,
+  createInitialAttemptSubmissionState,
   createAttemptWorkspaceState,
   goToAttemptQuestion,
   goToNextAttemptQuestion,
   goToPreviousAttemptQuestion,
+  isAttemptFinalized,
   isAttemptQuestionAnswered,
+  isAttemptInteractionLocked,
+  isAttemptSubmissionBusy,
   listStudentAttemptBootstrapRecords,
+  openAttemptSubmissionConfirmation,
   parseAttemptAutosaveSnapshot,
   recoverAttemptWorkspaceState,
   resolveAttemptSessionEntry,
   serializeAttemptAutosaveSnapshot,
   setAttemptSingleSelectAnswer,
+  startAttemptSubmission,
   setAttemptTextAnswer,
   toAttemptAutosaveStorageKey,
   toggleAttemptMarkedForReview,
   toggleAttemptMultiSelectAnswer,
   type AttemptAutosaveStatus,
   type AttemptAutosaveTone,
+  type AttemptSubmissionState,
+  type AttemptSubmissionTone,
 } from "../../../../../modules/attempts";
 
 type StudentAttemptPageProps = {
@@ -212,6 +225,52 @@ const questionCardStyle: CSSProperties = {
   boxShadow: "0 18px 40px rgba(16, 35, 60, 0.08)",
 };
 
+const modalBackdropStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 40,
+  display: "grid",
+  placeItems: "center",
+  padding: "24px",
+  background: "rgba(15, 23, 42, 0.45)",
+  backdropFilter: "blur(10px)",
+};
+
+const modalCardStyle: CSSProperties = {
+  width: "min(720px, 100%)",
+  display: "grid",
+  gap: "18px",
+  padding: "28px",
+  borderRadius: "28px",
+  background: "#ffffff",
+  border: "1px solid rgba(16, 35, 60, 0.08)",
+  boxShadow: "0 24px 48px rgba(15, 23, 42, 0.24)",
+};
+
+const finalStateCardStyle = (
+  tone: AttemptSubmissionTone,
+): CSSProperties => {
+  if (tone === "warning") {
+    return {
+      ...cardStyle,
+      background:
+        "linear-gradient(135deg, rgba(146, 64, 14, 0.96) 0%, rgba(180, 83, 9, 0.94) 100%)",
+      color: "#fff7ed",
+    };
+  }
+
+  if (tone === "success") {
+    return {
+      ...cardStyle,
+      background:
+        "linear-gradient(135deg, rgba(6, 95, 70, 0.96) 0%, rgba(15, 118, 110, 0.94) 100%)",
+      color: "#ecfeff",
+    };
+  }
+
+  return heroStyle(false);
+};
+
 type AttemptAutosaveState = {
   status: AttemptAutosaveStatus;
   lastSavedAt: Date | null;
@@ -220,6 +279,7 @@ type AttemptAutosaveState = {
 };
 
 const AUTOSAVE_DEBOUNCE_MS = 700;
+const SUBMIT_TRANSITION_MS = 900;
 
 const createInitialAutosaveState = (): AttemptAutosaveState => ({
   status: "idle",
@@ -227,6 +287,9 @@ const createInitialAutosaveState = (): AttemptAutosaveState => ({
   recoveredAt: null,
   failureMessage: null,
 });
+
+const formatQuestionOrderList = (questionOrders: readonly number[]): string =>
+  questionOrders.length === 0 ? "None" : questionOrders.join(", ");
 
 const getAutosavePillColors = (
   tone: AttemptAutosaveTone,
@@ -249,6 +312,32 @@ const getAutosavePillColors = (
   }
 
   if (tone === "critical") {
+    return {
+      background: "rgba(180, 83, 9, 0.14)",
+      color: "#b45309",
+    };
+  }
+
+  return {
+    background: "rgba(71, 85, 105, 0.12)",
+    color: "#334155",
+  };
+};
+
+const getSubmissionToneColors = (
+  tone: AttemptSubmissionTone,
+): {
+  background: string;
+  color: string;
+} => {
+  if (tone === "success") {
+    return {
+      background: "rgba(15, 118, 110, 0.12)",
+      color: "#0f766e",
+    };
+  }
+
+  if (tone === "warning") {
     return {
       background: "rgba(180, 83, 9, 0.14)",
       color: "#b45309",
@@ -379,13 +468,25 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
   const [autosaveState, setAutosaveState] = useState<AttemptAutosaveState>(
     createInitialAutosaveState,
   );
+  const [submissionState, setSubmissionState] = useState<AttemptSubmissionState>(
+    createInitialAttemptSubmissionState,
+  );
   const [recoveryReady, setRecoveryReady] = useState(attemptSession === null);
   const autosaveFingerprintRef = useRef<string | null>(null);
+  const attemptTimer =
+    attemptSession === null
+      ? null
+      : buildAttemptTimerViewModel(
+          attemptSession.startedAt,
+          attemptSession.expiresAt,
+          now,
+        );
 
   useEffect(() => {
     if (attemptSession === null) {
       setWorkspaceState(null);
       setAutosaveState(createInitialAutosaveState());
+      setSubmissionState(createInitialAttemptSubmissionState());
       setRecoveryReady(true);
       autosaveFingerprintRef.current = null;
       return;
@@ -396,6 +497,7 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
     setRecoveryReady(false);
     setWorkspaceState(baseState);
     setAutosaveState(createInitialAutosaveState());
+    setSubmissionState(createInitialAttemptSubmissionState());
 
     if (typeof window === "undefined") {
       autosaveFingerprintRef.current = buildAttemptAutosaveFingerprint(
@@ -451,7 +553,22 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
   }, [attemptSession?.attemptId]);
 
   useEffect(() => {
-    if (attemptSession === null || workspaceState === null || !recoveryReady) {
+    if (attemptSession === null || attemptTimer?.tone !== "expired") {
+      return;
+    }
+
+    setSubmissionState((state) =>
+      applyAttemptAutoSubmit(state, attemptSession.expiresAt),
+    );
+  }, [attemptSession?.attemptId, attemptTimer?.tone]);
+
+  useEffect(() => {
+    if (
+      attemptSession === null ||
+      workspaceState === null ||
+      !recoveryReady ||
+      isAttemptInteractionLocked(submissionState)
+    ) {
       return;
     }
 
@@ -506,7 +623,46 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [attemptSession?.attemptId, recoveryReady, workspaceState]);
+  }, [attemptSession?.attemptId, recoveryReady, submissionState, workspaceState]);
+
+  useEffect(() => {
+    if (attemptSession === null || submissionState.phase !== "submitting") {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setSubmissionState((state) =>
+        completeAttemptSubmission(state, new Date()),
+      );
+    }, SUBMIT_TRANSITION_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [attemptSession?.attemptId, submissionState.phase]);
+
+  useEffect(() => {
+    if (
+      attemptSession === null ||
+      workspaceState === null ||
+      !isAttemptFinalized(submissionState) ||
+      typeof window === "undefined"
+    ) {
+      return;
+    }
+
+    try {
+      window.localStorage.removeItem(
+        toAttemptAutosaveStorageKey(attemptSession.attemptId),
+      );
+      autosaveFingerprintRef.current = buildAttemptAutosaveFingerprint(
+        attemptSession,
+        workspaceState,
+      );
+    } catch {
+      return;
+    }
+  }, [attemptSession?.attemptId, submissionState.phase, workspaceState]);
 
   return (
     <div style={pageStyle}>
@@ -561,11 +717,7 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
         </>
       ) : (
         workspaceState !== null && (() => {
-          const timer = buildAttemptTimerViewModel(
-            attemptSession.startedAt,
-            attemptSession.expiresAt,
-            now,
-          );
+          const timer = attemptTimer!;
           const currentQuestion =
             attemptSession.questions[workspaceState.currentQuestionIndex]!;
           const currentDraft = workspaceState.drafts[currentQuestion.examQuestionId]!;
@@ -579,6 +731,19 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
             (item) => item.isMarkedForReview,
           ).length;
           const currentQuestionAnswered = isAttemptQuestionAnswered(currentDraft);
+          const submissionSummary = buildAttemptSubmissionSummary(
+            attemptSession,
+            workspaceState,
+          );
+          const submissionPresentation = buildAttemptSubmissionPresentation(
+            submissionState,
+            submissionSummary,
+          );
+          const submissionColors = getSubmissionToneColors(
+            submissionPresentation.tone,
+          );
+          const submitBusy = isAttemptSubmissionBusy(submissionState);
+          const submitFinalized = isAttemptFinalized(submissionState);
           const autosaveIndicator = buildAttemptAutosaveIndicator(
             autosaveState.status,
             autosaveState.failureMessage,
@@ -592,6 +757,174 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
                 : autosaveState.recoveredAt !== null
                   ? `${autosaveIndicator.detail} Recovered on entry from the local save at ${formatDateTime(autosaveState.recoveredAt)}.`
                   : autosaveIndicator.detail;
+
+          if (submitFinalized) {
+            return (
+              <div style={attemptCanvasStyle}>
+                <section style={finalStateCardStyle(submissionPresentation.tone)}>
+                  <span
+                    style={statusPillStyle(
+                      "rgba(255, 255, 255, 0.16)",
+                      "#ffffff",
+                    )}
+                  >
+                    {submissionPresentation.statusLabel}
+                  </span>
+
+                  <div style={{ display: "grid", gap: "10px" }}>
+                    <h2 style={{ margin: 0, fontSize: "2rem", lineHeight: 1.1 }}>
+                      {submissionPresentation.title}
+                    </h2>
+                    <p style={{ margin: 0, maxWidth: "760px", lineHeight: 1.7 }}>
+                      {submissionPresentation.detail}
+                    </p>
+                  </div>
+
+                  <div style={metaGridStyle}>
+                    <div
+                      style={{
+                        ...metaCardStyle,
+                        background: "rgba(255, 255, 255, 0.12)",
+                        border: "1px solid rgba(255, 255, 255, 0.18)",
+                      }}
+                    >
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: "0.8rem",
+                          textTransform: "uppercase",
+                          color: "rgba(255, 255, 255, 0.8)",
+                        }}
+                      >
+                        Answered
+                      </p>
+                      <p style={{ margin: 0, fontWeight: 700 }}>
+                        {submissionSummary.answeredCount}/{questionCount}
+                      </p>
+                    </div>
+
+                    <div
+                      style={{
+                        ...metaCardStyle,
+                        background: "rgba(255, 255, 255, 0.12)",
+                        border: "1px solid rgba(255, 255, 255, 0.18)",
+                      }}
+                    >
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: "0.8rem",
+                          textTransform: "uppercase",
+                          color: "rgba(255, 255, 255, 0.8)",
+                        }}
+                      >
+                        Unanswered
+                      </p>
+                      <p style={{ margin: 0, fontWeight: 700 }}>
+                        {submissionSummary.unansweredCount}
+                      </p>
+                    </div>
+
+                    <div
+                      style={{
+                        ...metaCardStyle,
+                        background: "rgba(255, 255, 255, 0.12)",
+                        border: "1px solid rgba(255, 255, 255, 0.18)",
+                      }}
+                    >
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: "0.8rem",
+                          textTransform: "uppercase",
+                          color: "rgba(255, 255, 255, 0.8)",
+                        }}
+                      >
+                        Finalized
+                      </p>
+                      <p style={{ margin: 0, fontWeight: 700 }}>
+                        {submissionState.finalizedAt === null
+                          ? "Just now"
+                          : formatDateTime(submissionState.finalizedAt)}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                <section style={cardStyle}>
+                  <div style={{ display: "grid", gap: "8px" }}>
+                    <h3 style={{ margin: 0, fontSize: "1.15rem" }}>
+                      Final Attempt Summary
+                    </h3>
+                    <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.6 }}>
+                      The attempt is now in a stable final state. Further edits and duplicate submit actions are blocked at the UI boundary.
+                    </p>
+                  </div>
+
+                  <div style={metaGridStyle}>
+                    <div style={metaCardStyle}>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: "0.8rem",
+                          textTransform: "uppercase",
+                          color: "#64748b",
+                        }}
+                      >
+                        Unanswered Questions
+                      </p>
+                      <p style={{ margin: 0, fontWeight: 700, color: "#10233c" }}>
+                        {formatQuestionOrderList(
+                          submissionSummary.unansweredQuestionOrders,
+                        )}
+                      </p>
+                    </div>
+
+                    <div style={metaCardStyle}>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: "0.8rem",
+                          textTransform: "uppercase",
+                          color: "#64748b",
+                        }}
+                      >
+                        Marked for Review
+                      </p>
+                      <p style={{ margin: 0, fontWeight: 700, color: "#10233c" }}>
+                        {formatQuestionOrderList(
+                          submissionSummary.markedQuestionOrders,
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+                    <a
+                      href="/student"
+                      style={{
+                        display: "inline-flex",
+                        width: "fit-content",
+                        padding: "12px 18px",
+                        borderRadius: "14px",
+                        background: "rgba(15, 118, 110, 0.12)",
+                        color: "#0f766e",
+                        textDecoration: "none",
+                        fontWeight: 700,
+                      }}
+                    >
+                      Back to Dashboard
+                    </a>
+                    <span style={statusPillStyle(submissionColors.background, submissionColors.color)}>
+                      {submissionState.phase === "auto_submitted"
+                        ? "Closed by timeout"
+                        : "Closed by submit confirmation"}
+                    </span>
+                  </div>
+                </section>
+              </div>
+            );
+          }
 
           return (
             <div style={attemptCanvasStyle}>
@@ -698,18 +1031,32 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
                     </div>
                     <button
                       type="button"
-                      disabled
+                      onClick={() =>
+                        setSubmissionState((state) =>
+                          openAttemptSubmissionConfirmation(state),
+                        )
+                      }
+                      disabled={submissionState.phase !== "active"}
                       style={{
                         padding: "12px 18px",
                         borderRadius: "14px",
                         border: "none",
-                        background: "rgba(148, 163, 184, 0.18)",
-                        color: "#64748b",
+                        background:
+                          submissionState.phase === "active"
+                            ? "#10233c"
+                            : "rgba(148, 163, 184, 0.18)",
+                        color:
+                          submissionState.phase === "active"
+                            ? "#f8fafc"
+                            : "#64748b",
                         fontWeight: 700,
-                        cursor: "not-allowed",
+                        cursor:
+                          submissionState.phase === "active"
+                            ? "pointer"
+                            : "not-allowed",
                       }}
                     >
-                      Submit Later
+                      Submit Attempt
                     </button>
                   </div>
                 </div>
@@ -1201,6 +1548,176 @@ export default function StudentAttemptPage({ params }: StudentAttemptPageProps) 
                   </section>
                 </aside>
               </div>
+
+              {(submissionState.phase === "confirming" || submitBusy) && (
+                <div style={modalBackdropStyle}>
+                  <section
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="attempt-submit-modal-title"
+                    style={modalCardStyle}
+                  >
+                    <div style={{ display: "grid", gap: "10px" }}>
+                      <span
+                        style={statusPillStyle(
+                          submissionColors.background,
+                          submissionColors.color,
+                        )}
+                      >
+                        {submissionPresentation.statusLabel}
+                      </span>
+                      <h3
+                        id="attempt-submit-modal-title"
+                        style={{ margin: 0, fontSize: "1.45rem", color: "#10233c" }}
+                      >
+                        {submissionPresentation.title}
+                      </h3>
+                      <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.7 }}>
+                        {submissionPresentation.detail}
+                      </p>
+                    </div>
+
+                    <div style={metaGridStyle}>
+                      <div style={metaCardStyle}>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontSize: "0.8rem",
+                            textTransform: "uppercase",
+                            color: "#64748b",
+                          }}
+                        >
+                          Answered
+                        </p>
+                        <p style={{ margin: 0, fontWeight: 700, color: "#10233c" }}>
+                          {submissionSummary.answeredCount}/{questionCount}
+                        </p>
+                      </div>
+
+                      <div style={metaCardStyle}>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontSize: "0.8rem",
+                            textTransform: "uppercase",
+                            color: "#64748b",
+                          }}
+                        >
+                          Unanswered
+                        </p>
+                        <p style={{ margin: 0, fontWeight: 700, color: "#10233c" }}>
+                          {submissionSummary.unansweredCount}
+                        </p>
+                      </div>
+
+                      <div style={metaCardStyle}>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontSize: "0.8rem",
+                            textTransform: "uppercase",
+                            color: "#64748b",
+                          }}
+                        >
+                          Marked
+                        </p>
+                        <p style={{ margin: 0, fontWeight: 700, color: "#10233c" }}>
+                          {submissionSummary.markedCount}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "grid", gap: "12px" }}>
+                      <div style={metaCardStyle}>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontSize: "0.8rem",
+                            textTransform: "uppercase",
+                            color: "#64748b",
+                          }}
+                        >
+                          Unanswered Questions
+                        </p>
+                        <p style={{ margin: 0, fontWeight: 700, color: "#10233c" }}>
+                          {formatQuestionOrderList(
+                            submissionSummary.unansweredQuestionOrders,
+                          )}
+                        </p>
+                      </div>
+
+                      <div style={metaCardStyle}>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontSize: "0.8rem",
+                            textTransform: "uppercase",
+                            color: "#64748b",
+                          }}
+                        >
+                          Marked for Review
+                        </p>
+                        <p style={{ margin: 0, fontWeight: 700, color: "#10233c" }}>
+                          {formatQuestionOrderList(
+                            submissionSummary.markedQuestionOrders,
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        flexWrap: "wrap",
+                        gap: "12px",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSubmissionState((state) =>
+                            closeAttemptSubmissionConfirmation(state),
+                          )
+                        }
+                        disabled={submitBusy}
+                        style={{
+                          padding: "12px 18px",
+                          borderRadius: "14px",
+                          border: "1px solid rgba(16, 35, 60, 0.1)",
+                          background: "#ffffff",
+                          color: submitBusy ? "#94a3b8" : "#334155",
+                          fontWeight: 700,
+                          cursor: submitBusy ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        Keep Reviewing
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSubmissionState((state) =>
+                            startAttemptSubmission(state),
+                          )
+                        }
+                        disabled={submitBusy}
+                        style={{
+                          padding: "12px 18px",
+                          borderRadius: "14px",
+                          border: "none",
+                          background: submitBusy ? "#94a3b8" : "#10233c",
+                          color: "#f8fafc",
+                          fontWeight: 700,
+                          cursor: submitBusy ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        {submitBusy ? "Submitting..." : "Confirm Submit"}
+                      </button>
+                    </div>
+                  </section>
+                </div>
+              )}
             </div>
           );
         })()
