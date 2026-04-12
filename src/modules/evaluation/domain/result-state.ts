@@ -2,7 +2,11 @@ export const RESULT_STATUSES = ["PENDING_REVIEW", "READY", "PUBLISHED"] as const
 
 export type ResultStatus = (typeof RESULT_STATUSES)[number];
 
-export const ATTEMPT_REVIEW_COMPLETION_STATUS = "EVALUATED" as const;
+export const ATTEMPT_REVIEW_STATUSES = ["UNDER_REVIEW", "EVALUATED"] as const;
+
+export type AttemptReviewStatus = (typeof ATTEMPT_REVIEW_STATUSES)[number];
+
+export const ATTEMPT_REVIEW_COMPLETION_STATUS: AttemptReviewStatus = "EVALUATED";
 
 const RESULT_STATUS_TRANSITIONS: Record<ResultStatus, readonly ResultStatus[]> = {
   PENDING_REVIEW: ["READY"],
@@ -35,6 +39,24 @@ export const transitionResultStatus = (
 export const resolveResultStatusAfterObjectiveGrading = (
   hasSubjectiveAnswers: boolean,
 ): ResultStatus => (hasSubjectiveAnswers ? "PENDING_REVIEW" : "READY");
+
+export const resolveAttemptStatusForResultStatus = (
+  status: ResultStatus,
+): AttemptReviewStatus => (status === "PENDING_REVIEW" ? "UNDER_REVIEW" : "EVALUATED");
+
+export const resolveResultAndAttemptStates = (
+  hasPendingSubjectiveReviews: boolean,
+): {
+  resultStatus: ResultStatus;
+  attemptStatus: AttemptReviewStatus;
+} => {
+  const resultStatus = hasPendingSubjectiveReviews ? "PENDING_REVIEW" : "READY";
+
+  return {
+    resultStatus,
+    attemptStatus: resolveAttemptStatusForResultStatus(resultStatus),
+  };
+};
 
 export const canPublishResult = (status: ResultStatus): boolean => status === "READY";
 
