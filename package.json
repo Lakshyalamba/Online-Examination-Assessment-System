@@ -1,0 +1,9 @@
+{
+  "name": "online-examination-assessment-system",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --pretty false",
+    "test": "npm run build && node --test dist/modules/questions/validation/question.schemas.test.js dist/modules/questions/question-bank/question-bank-listing.test.js"
+  }
+}

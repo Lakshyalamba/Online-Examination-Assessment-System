@@ -4,14 +4,14 @@ import test from "node:test";
 import {
   QUESTION_DIFFICULTIES,
   QUESTION_TYPES,
-} from "../domain/question.types";
+} from "../domain/question.types.js";
 import {
   createEmptyQuestionDraft,
   createTrueFalseOptionDrafts,
   getQuestionReviewMode,
   parseQuestionDraft,
-} from "../utils/question-authoring";
-import { questionAuthoringSchema } from "./question.schemas";
+} from "../utils/question-authoring.js";
+import { questionAuthoringSchema } from "./question.schemas.js";
 
 const baseDraft = {
   stem: "State the most appropriate answer for the given prompt.",
@@ -159,6 +159,12 @@ test("parse helper normalizes option ordering before validation", () => {
       { label: "A", text: "2", isCorrect: false, optionOrder: 1 },
     ],
   });
+
+  assert.equal("options" in parsed, true);
+
+  if (!("options" in parsed)) {
+    throw new Error("Expected normalized objective options");
+  }
 
   assert.deepEqual(
     parsed.options.map((option) => option.optionOrder),

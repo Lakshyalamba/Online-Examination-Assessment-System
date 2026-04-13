@@ -5,7 +5,7 @@ import {
   QUESTION_TYPES,
   TRUE_FALSE_OPTION_LABELS,
   TRUE_FALSE_OPTION_TEXTS,
-} from "../domain/question.types";
+} from "../domain/question.types.js";
 
 const STEM_MAX_LENGTH = 5_000;
 const EXPECTED_ANSWER_MAX_LENGTH = 4_000;

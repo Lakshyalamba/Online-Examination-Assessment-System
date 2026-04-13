@@ -1,75 +1,29 @@
 import {
   DEFAULT_CHOICE_OPTION_COUNT,
-  OBJECTIVE_QUESTION_TYPES,
-  QUESTION_DIFFICULTIES,
-  QUESTION_TYPES,
-  SUBJECTIVE_QUESTION_TYPES,
   TRUE_FALSE_OPTION_LABELS,
   TRUE_FALSE_OPTION_TEXTS,
   type ObjectiveQuestionType,
   type QuestionAuthoringDraftFor,
-  type QuestionDifficulty,
   type QuestionOptionDraft,
-  type QuestionReviewMode,
   type QuestionType,
-  type SubjectiveQuestionType,
-} from "../domain/question.types";
+} from "../domain/question.types.js";
 import {
   questionAuthoringSchema,
   questionSchemasByType,
   type QuestionAuthoringInput,
   type QuestionAuthoringValues,
-} from "../validation/question.schemas";
+} from "../validation/question.schemas.js";
+export {
+  QUESTION_DIFFICULTY_LABELS,
+  QUESTION_DIFFICULTY_OPTIONS,
+  QUESTION_TYPE_LABELS,
+  QUESTION_TYPE_OPTIONS,
+  getQuestionReviewMode,
+  isObjectiveQuestionType,
+  isSubjectiveQuestionType,
+} from "./question-metadata.js";
 
 const OPTION_LABEL_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
-  SINGLE_CHOICE: "Single Choice",
-  MULTIPLE_CHOICE: "Multiple Choice",
-  TRUE_FALSE: "True / False",
-  SHORT_TEXT: "Short Text",
-  LONG_TEXT: "Long Text",
-};
-
-export const QUESTION_DIFFICULTY_LABELS: Record<QuestionDifficulty, string> = {
-  EASY: "Easy",
-  MEDIUM: "Medium",
-  HARD: "Hard",
-};
-
-const QUESTION_REVIEW_MODE_BY_TYPE: Record<QuestionType, QuestionReviewMode> = {
-  SINGLE_CHOICE: "OBJECTIVE",
-  MULTIPLE_CHOICE: "OBJECTIVE",
-  TRUE_FALSE: "OBJECTIVE",
-  SHORT_TEXT: "MANUAL",
-  LONG_TEXT: "MANUAL",
-};
-
-export const QUESTION_TYPE_OPTIONS = QUESTION_TYPES.map((value) => ({
-  value,
-  label: QUESTION_TYPE_LABELS[value],
-}));
-
-export const QUESTION_DIFFICULTY_OPTIONS = QUESTION_DIFFICULTIES.map(
-  (value) => ({
-    value,
-    label: QUESTION_DIFFICULTY_LABELS[value],
-  }),
-);
-
-export const getQuestionReviewMode = (
-  type: QuestionType,
-): QuestionReviewMode => QUESTION_REVIEW_MODE_BY_TYPE[type];
-
-export const isObjectiveQuestionType = (
-  type: QuestionType,
-): type is ObjectiveQuestionType =>
-  OBJECTIVE_QUESTION_TYPES.includes(type as ObjectiveQuestionType);
-
-export const isSubjectiveQuestionType = (
-  type: QuestionType,
-): type is SubjectiveQuestionType =>
-  SUBJECTIVE_QUESTION_TYPES.includes(type as SubjectiveQuestionType);
 
 export const getQuestionSchemaForType = <T extends QuestionType>(type: T) =>
   questionSchemasByType[type];
