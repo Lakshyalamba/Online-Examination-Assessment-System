@@ -56,7 +56,8 @@ const state: {
   selectedQuestionId: string | null;
 } = {
   filters: getInitialFilters(),
-  selectedQuestionId: QUESTION_BANK_SAMPLE_ENTRIES[0]?.id ?? null,
+  selectedQuestionId:
+    getSearchParamValue("selected") || QUESTION_BANK_SAMPLE_ENTRIES[0]?.id || null,
 };
 
 const render = () => {

@@ -14,12 +14,14 @@ import {
   type QuestionAuthoringValues,
 } from "../validation/question.schemas.js";
 export {
+  isObjectiveQuestionDraft,
   QUESTION_DIFFICULTY_LABELS,
   QUESTION_DIFFICULTY_OPTIONS,
   QUESTION_TYPE_LABELS,
   QUESTION_TYPE_OPTIONS,
   getQuestionReviewMode,
   isObjectiveQuestionType,
+  isSubjectiveQuestionDraft,
   isSubjectiveQuestionType,
 } from "./question-metadata.js";
 

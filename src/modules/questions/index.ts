@@ -1,3 +1,5 @@
+export * from "./create-question/question-authoring-form.js";
+export * from "./create-question/question-authoring.scenarios.js";
 export * from "./create-question/objective-question-form.js";
 export * from "./create-question/objective-question.scenarios.js";
 export * from "./domain/question.types.js";

@@ -1,4 +1,5 @@
 import {
+  formatQuestionBankDate,
   getQuestionBankEmptyStateCopy,
   getQuestionBankListingSummary,
 } from "../question-bank-listing.js";
@@ -9,6 +10,7 @@ import type {
 } from "../question-bank.types.js";
 import { renderQuestionBankEmptyState } from "./question-bank-empty-state.js";
 import { renderQuestionBankFilterToolbar } from "./question-bank-filter-toolbar.js";
+import { renderQuestionDraftPreviewStructure } from "./question-draft-preview.js";
 import { renderQuestionBankRow } from "./question-bank-row.js";
 import {
   escapeHtml,
@@ -24,10 +26,19 @@ const renderQuestionBankPreview = (entry: QuestionBankEntry | null) => {
     return `
       <div class="question-bank-preview__empty">
         <h3>Nothing selected</h3>
-        <p>Choose a question from the table to inspect its metadata, answer outline, and explanation.</p>
+        <p>Choose a question from the table to inspect its saved structure, reviewer guidance, and edit path.</p>
       </div>
     `;
   }
+
+  const createSimilarParams = new URLSearchParams({
+    difficulty: entry.difficulty,
+    topic: entry.topicId,
+    type: entry.type,
+  }).toString();
+  const explanationClass = entry.explanation
+    ? ""
+    : ' class="question-bank-preview__empty-copy"';
 
   return `
     <div class="question-bank-preview__header">
@@ -42,6 +53,12 @@ const renderQuestionBankPreview = (entry: QuestionBankEntry | null) => {
         ${renderQuestionBankChip(entry.topicName, "topic")}
       </div>
     </div>
+    <div class="question-bank-preview__actions">
+      <a class="question-bank-button" href="./edit.html?id=${encodeURIComponent(
+        entry.id,
+      )}">Edit question</a>
+      <a class="question-bank-button question-bank-button--secondary" href="./create.html?${createSimilarParams}">Create similar</a>
+    </div>
     <dl class="question-bank-preview__meta">
       <div>
         <dt>Review mode</dt>
@@ -51,21 +68,30 @@ const renderQuestionBankPreview = (entry: QuestionBankEntry | null) => {
         <dt>Usage</dt>
         <dd>${entry.usageCount} exam${entry.usageCount === 1 ? "" : "s"}</dd>
       </div>
+      <div>
+        <dt>Updated</dt>
+        <dd>${escapeHtml(formatQuestionBankDate(entry.updatedAt))}</dd>
+      </div>
+      <div>
+        <dt>Response style</dt>
+        <dd>${escapeHtml(entry.reviewMode === "MANUAL" ? "Subjective" : "Objective")}</dd>
+      </div>
     </dl>
     <section class="question-bank-preview__section">
-      <h4>Expected answer</h4>
-      <ul>
-        ${entry.answerPreview
-          .map(
-            (answerLine) =>
-              `<li>${escapeHtml(answerLine)}</li>`,
-          )
-          .join("")}
-      </ul>
+      <h4>Saved structure</h4>
+      <div class="question-bank-preview__structure">
+        ${renderQuestionDraftPreviewStructure({
+          draft: entry.draft,
+          emptyAnswerLabel: "Expected answer",
+          emptyOptionLabel: "Option text",
+        })}
+      </div>
     </section>
     <section class="question-bank-preview__section">
       <h4>Explanation</h4>
-      <p>${escapeHtml(entry.explanation)}</p>
+      <p${explanationClass}>${escapeHtml(
+        entry.explanation || "No explanation saved for this reusable question yet.",
+      )}</p>
     </section>
   `;
 };
@@ -94,7 +120,7 @@ export const renderQuestionBankPage = ({
     eyebrow: "Examiner Authoring",
     title: "Question Bank",
     description:
-      "Search reusable assessment items, filter them by taxonomy, and scan row metadata before reusing them in an exam draft.",
+      "Search reusable assessment items, filter them by taxonomy, preview their saved structure, and move directly into editing when the question needs refinement.",
     headerActions: `
       <a class="question-bank-button" href="./create.html">Create question</a>
     `,

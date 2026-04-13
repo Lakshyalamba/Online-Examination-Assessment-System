@@ -1,4 +1,5 @@
 import type {
+  QuestionAuthoringDraft,
   QuestionDifficulty,
   QuestionReviewMode,
   QuestionType,
@@ -28,6 +29,7 @@ export interface QuestionBankEntry {
   updatedAt: string;
   answerPreview: string[];
   explanation: string;
+  draft: QuestionAuthoringDraft;
 }
 
 export interface QuestionBankFilters {

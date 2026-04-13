@@ -3,10 +3,13 @@ import {
   QUESTION_DIFFICULTIES,
   QUESTION_TYPES,
   SUBJECTIVE_QUESTION_TYPES,
+  type ObjectiveQuestionAuthoringDraft,
   type ObjectiveQuestionType,
+  type QuestionAuthoringDraft,
   type QuestionDifficulty,
   type QuestionReviewMode,
   type QuestionType,
+  type SubjectiveQuestionAuthoringDraft,
   type SubjectiveQuestionType,
 } from "../domain/question.types.js";
 
@@ -57,3 +60,11 @@ export const isSubjectiveQuestionType = (
   type: QuestionType,
 ): type is SubjectiveQuestionType =>
   SUBJECTIVE_QUESTION_TYPES.includes(type as SubjectiveQuestionType);
+
+export const isObjectiveQuestionDraft = (
+  draft: QuestionAuthoringDraft,
+): draft is ObjectiveQuestionAuthoringDraft => isObjectiveQuestionType(draft.type);
+
+export const isSubjectiveQuestionDraft = (
+  draft: QuestionAuthoringDraft,
+): draft is SubjectiveQuestionAuthoringDraft => isSubjectiveQuestionType(draft.type);

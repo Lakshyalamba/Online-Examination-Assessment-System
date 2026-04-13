@@ -91,6 +91,16 @@ export type QuestionAuthoringDraft =
   | ShortTextQuestionDraft
   | LongTextQuestionDraft;
 
+export type ObjectiveQuestionAuthoringDraft = Extract<
+  QuestionAuthoringDraft,
+  { type: ObjectiveQuestionType }
+>;
+
+export type SubjectiveQuestionAuthoringDraft = Extract<
+  QuestionAuthoringDraft,
+  { type: SubjectiveQuestionType }
+>;
+
 export interface QuestionAuthoringDraftMap {
   SINGLE_CHOICE: SingleChoiceQuestionDraft;
   MULTIPLE_CHOICE: MultipleChoiceQuestionDraft;

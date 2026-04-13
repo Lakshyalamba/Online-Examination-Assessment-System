@@ -1,88 +1,139 @@
 import {
   QUESTION_DIFFICULTIES,
-  OBJECTIVE_QUESTION_TYPES,
-  type ObjectiveQuestionType,
+  QUESTION_TYPES,
   type QuestionDifficulty,
+  type QuestionType,
 } from "../../modules/questions/domain/question.types.js";
-import { QUESTION_BANK_SAMPLE_ENTRIES } from "../../modules/questions/question-bank/question-bank.data.js";
-import { getQuestionBankTopicOptions } from "../../modules/questions/question-bank/question-bank-listing.js";
-import { renderCreateObjectiveQuestionPage } from "../../modules/questions/create-question/ui/create-objective-question-page.js";
 import {
-  addObjectiveQuestionOption,
-  createEmptyObjectiveQuestionFormErrors,
-  createObjectiveQuestionDraft,
-  DEFAULT_OBJECTIVE_QUESTION_TYPE,
-  removeObjectiveQuestionOption,
-  updateObjectiveQuestionAnswerKey,
-  updateObjectiveQuestionOptionText,
-  validateObjectiveQuestionDraft,
-  type ObjectiveQuestionDraft,
-  type ObjectiveQuestionValues,
-} from "../../modules/questions/create-question/objective-question-form.js";
-import { OBJECTIVE_QUESTION_SCENARIOS } from "../../modules/questions/create-question/objective-question.scenarios.js";
+  QUESTION_BANK_SAMPLE_ENTRIES,
+  createQuestionBankEntry,
+  getQuestionBankEntryById,
+} from "../../modules/questions/question-bank/question-bank.data.js";
+import { getQuestionBankTopicOptions } from "../../modules/questions/question-bank/question-bank-listing.js";
+import {
+  renderQuestionAuthoringNotFoundPage,
+  renderQuestionAuthoringPage,
+} from "../../modules/questions/create-question/ui/question-authoring-page.js";
+import {
+  addQuestionDraftOption,
+  createEmptyQuestionAuthoringFormErrors,
+  createQuestionAuthoringDraft,
+  type QuestionFormDraft,
+  type QuestionFormValues,
+  removeQuestionDraftOption,
+  updateQuestionDraftAnswerKey,
+  updateQuestionDraftDifficulty,
+  updateQuestionDraftExpectedAnswer,
+  updateQuestionDraftOptionText,
+  updateQuestionDraftTextField,
+  updateQuestionDraftTopic,
+  validateQuestionAuthoringDraft,
+} from "../../modules/questions/create-question/question-authoring-form.js";
+import { QUESTION_AUTHORING_SCENARIOS } from "../../modules/questions/create-question/question-authoring.scenarios.js";
 
-const root = document.querySelector<HTMLElement>(
-  "[data-create-objective-question-root]",
-);
+const root = document.querySelector<HTMLElement>("[data-question-authoring-root]");
 
 if (!root) {
-  throw new Error("Objective question creation root element is missing.");
+  throw new Error("Question authoring root element is missing.");
 }
 
 const topics = getQuestionBankTopicOptions(QUESTION_BANK_SAMPLE_ENTRIES);
-
 const query = new URLSearchParams(window.location.search);
+const mode = root.dataset.mode === "edit" ? "edit" : "create";
 
-const isObjectiveQuestionType = (
-  value: string | null,
-): value is ObjectiveQuestionType =>
-  value !== null &&
-  OBJECTIVE_QUESTION_TYPES.includes(value as ObjectiveQuestionType);
+const isQuestionType = (value: string | null): value is QuestionType =>
+  value !== null && QUESTION_TYPES.includes(value as QuestionType);
 
 const isQuestionDifficulty = (
   value: string | null,
 ): value is QuestionDifficulty =>
   value !== null && QUESTION_DIFFICULTIES.includes(value as QuestionDifficulty);
 
-const getInitialObjectiveDraft = () => {
-  const scenarioDraft = query.get("scenario");
-
-  if (scenarioDraft && OBJECTIVE_QUESTION_SCENARIOS[scenarioDraft]) {
-    return structuredClone(OBJECTIVE_QUESTION_SCENARIOS[scenarioDraft]);
+const getEditingEntry = () => {
+  if (mode !== "edit") {
+    return null;
   }
 
-  const typeParam = query.get("type");
-  const type = isObjectiveQuestionType(typeParam)
-    ? typeParam
-    : DEFAULT_OBJECTIVE_QUESTION_TYPE;
-  const draft = createObjectiveQuestionDraft(type);
+  const questionId = query.get("id");
+  return questionId ? getQuestionBankEntryById(questionId) : null;
+};
+
+const editingEntry = getEditingEntry();
+
+const getDraftWithQueryOverrides = (draft: QuestionFormDraft) => {
+  let nextDraft = draft;
   const topicParam = query.get("topic");
   const difficultyParam = query.get("difficulty");
   const stemParam = query.get("stem");
+  const explanationParam = query.get("explanation");
+  const expectedAnswerParam = query.get("expectedAnswer");
 
-  return {
-    ...draft,
-    topicId: topics.some((topic) => topic.id === topicParam) ? topicParam ?? "" : "",
-    difficulty: isQuestionDifficulty(difficultyParam)
-      ? difficultyParam
-      : draft.difficulty,
-    stem: stemParam?.trim() ?? "",
-    explanation: query.get("explanation")?.trim() ?? "",
-  };
+  if (topics.some((topic) => topic.id === topicParam)) {
+    nextDraft = updateQuestionDraftTopic(nextDraft, topicParam ?? "");
+  }
+
+  if (isQuestionDifficulty(difficultyParam)) {
+    nextDraft = updateQuestionDraftDifficulty(nextDraft, difficultyParam);
+  }
+
+  if (stemParam?.trim()) {
+    nextDraft = updateQuestionDraftTextField(nextDraft, "stem", stemParam.trim());
+  }
+
+  if (explanationParam !== null) {
+    nextDraft = updateQuestionDraftTextField(
+      nextDraft,
+      "explanation",
+      explanationParam,
+    );
+  }
+
+  if (expectedAnswerParam !== null) {
+    nextDraft = updateQuestionDraftExpectedAnswer(nextDraft, expectedAnswerParam);
+  }
+
+  return nextDraft;
 };
 
+const getInitialDraft = () => {
+  if (editingEntry) {
+    return getDraftWithQueryOverrides(structuredClone(editingEntry.draft));
+  }
+
+  const scenarioDraft = query.get("scenario");
+
+  if (scenarioDraft && QUESTION_AUTHORING_SCENARIOS[scenarioDraft]) {
+    return getDraftWithQueryOverrides(
+      structuredClone(QUESTION_AUTHORING_SCENARIOS[scenarioDraft]),
+    );
+  }
+
+  const typeParam = query.get("type");
+  const draft = createQuestionAuthoringDraft(
+    isQuestionType(typeParam) ? typeParam : "SINGLE_CHOICE",
+  );
+
+  return getDraftWithQueryOverrides(draft);
+};
+
+const initialDraft = getInitialDraft();
+
 const state: {
-  draft: ObjectiveQuestionDraft;
-  errors: ReturnType<typeof createEmptyObjectiveQuestionFormErrors>;
-  lastCreatedQuestion: ObjectiveQuestionValues | null;
+  draft: QuestionFormDraft;
+  baseDraft: QuestionFormDraft;
+  errors: ReturnType<typeof createEmptyQuestionAuthoringFormErrors>;
+  lastSavedQuestion: QuestionFormValues | null;
+  savedEntry: typeof editingEntry;
   status:
     | { tone: "success"; title: string; detail: string }
     | { tone: "error"; title: string; detail: string }
     | null;
 } = {
-  draft: getInitialObjectiveDraft(),
-  errors: createEmptyObjectiveQuestionFormErrors(),
-  lastCreatedQuestion: null,
+  draft: structuredClone(initialDraft),
+  baseDraft: structuredClone(initialDraft),
+  errors: createEmptyQuestionAuthoringFormErrors(),
+  lastSavedQuestion: null,
+  savedEntry: editingEntry,
   status: null,
 };
 
@@ -124,9 +175,7 @@ const captureFocus = () => {
   };
 };
 
-const restoreFocus = (
-  focusSnapshot: ReturnType<typeof captureFocus>,
-) => {
+const restoreFocus = (focusSnapshot: ReturnType<typeof captureFocus>) => {
   if (!focusSnapshot) {
     return;
   }
@@ -162,15 +211,22 @@ const restoreFocus = (
 };
 
 const resetFeedback = () => {
-  state.errors = createEmptyObjectiveQuestionFormErrors();
+  state.errors = createEmptyQuestionAuthoringFormErrors();
   state.status = null;
 };
 
 const render = (focusSnapshot: ReturnType<typeof captureFocus> = null) => {
-  root.innerHTML = renderCreateObjectiveQuestionPage({
+  if (mode === "edit" && !state.savedEntry) {
+    root.innerHTML = renderQuestionAuthoringNotFoundPage(query.get("id"));
+    return;
+  }
+
+  root.innerHTML = renderQuestionAuthoringPage({
     draft: state.draft,
     errors: state.errors,
-    lastCreatedQuestion: state.lastCreatedQuestion,
+    lastSavedQuestion: state.lastSavedQuestion,
+    mode,
+    savedEntry: state.savedEntry,
     status: state.status,
     topics,
   });
@@ -178,33 +234,63 @@ const render = (focusSnapshot: ReturnType<typeof captureFocus> = null) => {
 };
 
 const submitDraft = () => {
-  const result = validateObjectiveQuestionDraft(state.draft);
+  if (mode === "edit" && !state.savedEntry) {
+    render();
+    return;
+  }
+
+  const result = validateQuestionAuthoringDraft(state.draft);
 
   if (!result.success) {
     state.errors = result.errors;
     state.status = {
       tone: "error",
-      title: "Question creation blocked",
+      title: mode === "edit" ? "Question update blocked" : "Question creation blocked",
       detail:
-        "Fix the highlighted validation issues before the question can be created.",
+        mode === "edit"
+          ? "Fix the highlighted validation issues before these edits can be saved."
+          : "Fix the highlighted validation issues before the question can be created.",
     };
     render();
     return;
   }
 
-  state.lastCreatedQuestion = result.data;
-  state.errors = createEmptyObjectiveQuestionFormErrors();
+  state.lastSavedQuestion = result.data;
+  state.errors = createEmptyQuestionAuthoringFormErrors();
+
+  if (mode === "edit" && state.savedEntry) {
+    state.savedEntry = createQuestionBankEntry({
+      id: state.savedEntry.id,
+      topicName:
+        topics.find((topic) => topic.id === result.data.topicId)?.name ??
+        state.savedEntry.topicName,
+      usageCount: state.savedEntry.usageCount,
+      updatedAt: state.savedEntry.updatedAt,
+      draft: structuredClone(result.data),
+    });
+    state.baseDraft = structuredClone(result.data);
+    state.draft = structuredClone(result.data);
+    state.status = {
+      tone: "success",
+      title: "Question updated",
+      detail:
+        "The edited question passed schema validation and the saved preview now reflects the updated structure.",
+    };
+    render();
+    return;
+  }
+
   state.status = {
     tone: "success",
-    title: "Objective question created",
+    title: "Question created",
     detail:
       "The draft passed schema validation and is ready to be stored by the authoring workflow.",
   };
-  state.draft = {
-    ...createObjectiveQuestionDraft(result.data.type),
+  state.baseDraft = createQuestionAuthoringDraft(result.data.type, {
     topicId: result.data.topicId,
     difficulty: result.data.difficulty,
-  };
+  });
+  state.draft = structuredClone(state.baseDraft);
   render();
 };
 
@@ -218,10 +304,18 @@ root.addEventListener("input", (event) => {
   const focusSnapshot = captureFocus();
 
   if (target.dataset.field === "stem" || target.dataset.field === "explanation") {
-    state.draft = {
-      ...state.draft,
-      [target.dataset.field]: target.value,
-    };
+    state.draft = updateQuestionDraftTextField(
+      state.draft,
+      target.dataset.field,
+      target.value,
+    );
+    resetFeedback();
+    render(focusSnapshot);
+    return;
+  }
+
+  if (target.dataset.field === "expectedAnswer") {
+    state.draft = updateQuestionDraftExpectedAnswer(state.draft, target.value);
     resetFeedback();
     render(focusSnapshot);
     return;
@@ -232,7 +326,7 @@ root.addEventListener("input", (event) => {
     typeof target.dataset.optionIndex === "string" &&
     target.dataset.optionField === "text"
   ) {
-    state.draft = updateObjectiveQuestionOptionText(
+    state.draft = updateQuestionDraftOptionText(
       state.draft,
       Number(target.dataset.optionIndex),
       target.value,
@@ -252,10 +346,7 @@ root.addEventListener("change", (event) => {
   const focusSnapshot = captureFocus();
 
   if (target instanceof HTMLSelectElement && target.dataset.field === "topicId") {
-    state.draft = {
-      ...state.draft,
-      topicId: target.value,
-    };
+    state.draft = updateQuestionDraftTopic(state.draft, target.value);
     resetFeedback();
     render(focusSnapshot);
     return;
@@ -266,10 +357,7 @@ root.addEventListener("change", (event) => {
     target.dataset.field === "difficulty" &&
     isQuestionDifficulty(target.value)
   ) {
-    state.draft = {
-      ...state.draft,
-      difficulty: target.value,
-    };
+    state.draft = updateQuestionDraftDifficulty(state.draft, target.value);
     resetFeedback();
     render(focusSnapshot);
     return;
@@ -280,7 +368,7 @@ root.addEventListener("change", (event) => {
     typeof target.dataset.optionIndex === "string" &&
     target.dataset.optionField === "isCorrect"
   ) {
-    state.draft = updateObjectiveQuestionAnswerKey(
+    state.draft = updateQuestionDraftAnswerKey(
       state.draft,
       Number(target.dataset.optionIndex),
       target.checked,
@@ -309,17 +397,17 @@ root.addEventListener("click", (event) => {
     case "select-type": {
       const nextType = actionTrigger.dataset.questionType ?? null;
 
-      if (!isObjectiveQuestionType(nextType)) {
+      if (!isQuestionType(nextType)) {
         return;
       }
 
-      state.draft = createObjectiveQuestionDraft(nextType, state.draft);
+      state.draft = createQuestionAuthoringDraft(nextType, state.draft);
       resetFeedback();
       render(focusSnapshot);
       return;
     }
     case "add-option":
-      state.draft = addObjectiveQuestionOption(state.draft);
+      state.draft = addQuestionDraftOption(state.draft);
       resetFeedback();
       render(focusSnapshot);
       return;
@@ -328,7 +416,7 @@ root.addEventListener("click", (event) => {
         return;
       }
 
-      state.draft = removeObjectiveQuestionOption(
+      state.draft = removeQuestionDraftOption(
         state.draft,
         Number(actionTrigger.dataset.optionIndex),
       );
@@ -336,8 +424,8 @@ root.addEventListener("click", (event) => {
       render(focusSnapshot);
       return;
     case "reset-draft":
-      state.draft = createObjectiveQuestionDraft(state.draft.type);
-      state.errors = createEmptyObjectiveQuestionFormErrors();
+      state.draft = structuredClone(state.baseDraft);
+      state.errors = createEmptyQuestionAuthoringFormErrors();
       state.status = null;
       render();
       return;

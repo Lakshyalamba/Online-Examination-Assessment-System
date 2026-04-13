@@ -459,6 +459,12 @@ select {
   gap: 14px;
 }
 
+.question-bank-preview__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .question-bank-preview__header h3 {
   font-size: 1.55rem;
   line-height: 1.25;
@@ -508,6 +514,15 @@ select {
 .question-bank-preview__section ul {
   margin: 0;
   padding-left: 18px;
+}
+
+.question-bank-preview__structure {
+  display: grid;
+  gap: 12px;
+}
+
+.question-bank-preview__empty-copy {
+  color: var(--muted);
 }
 
 .question-bank-preview__empty {
@@ -608,7 +623,7 @@ select {
 
 .objective-question-type-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 14px;
   margin-top: 18px;
 }
@@ -817,6 +832,11 @@ select {
   line-height: 1.5;
 }
 
+.objective-question-summary__saved-structure {
+  display: grid;
+  gap: 12px;
+}
+
 .objective-question-summary__preview ul,
 .objective-question-summary__rules {
   margin: 0;
@@ -846,6 +866,57 @@ select {
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
+}
+
+.question-draft-preview-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.question-draft-preview-list__item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(247, 250, 255, 0.78);
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.question-draft-preview-list__item.is-correct {
+  border-color: rgba(46, 140, 161, 0.32);
+  background: linear-gradient(135deg, rgba(219, 239, 244, 0.72), rgba(247, 250, 255, 0.92));
+  color: var(--text);
+}
+
+.question-draft-preview-list__label {
+  font-weight: 700;
+}
+
+.question-draft-preview-answer {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(247, 250, 255, 0.82);
+}
+
+.question-draft-preview-answer__label {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.question-draft-preview-answer p:last-child {
+  margin: 0;
+  line-height: 1.7;
 }
 
 @keyframes question-bank-rise {
@@ -932,7 +1003,8 @@ select {
   }
 
   .objective-question-actions__buttons,
-  .question-bank-page-header__actions {
+  .question-bank-page-header__actions,
+  .question-bank-preview__actions {
     width: 100%;
   }
 }
