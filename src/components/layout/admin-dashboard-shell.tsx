@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 
 import { DashboardShell } from "./dashboard-shell";
 
@@ -11,22 +14,22 @@ type AdminDashboardShellProps = {
 
 const adminNavigation = [
   {
-    href: "#overview",
+    href: "/admin",
     label: "Overview",
     description: "Operational summary and governance signals",
   },
   {
-    href: "#user-operations",
+    href: "/admin#user-operations",
     label: "User Operations",
     description: "User listing, search, and filter workflows",
   },
   {
-    href: "#audit-activity",
+    href: "/admin/audit",
     label: "Audit Activity",
-    description: "Preview area for searchable system events",
+    description: "Dedicated listing for admin event history",
   },
   {
-    href: "#reporting",
+    href: "/admin#reporting",
     label: "Reporting",
     description: "Placeholder for analytics and reporting detail",
   },
@@ -34,18 +37,26 @@ const adminNavigation = [
 
 export function AdminDashboardShell({
   children,
-  activeHref = "#overview",
+  activeHref,
   pageTitle = "Admin Dashboard",
   pageDescription = "Monitor users, operational activity, audit visibility, and reporting readiness from one admin-only shell.",
 }: AdminDashboardShellProps) {
+  const pathname = usePathname();
+  const resolvedActiveHref = activeHref ?? pathname;
+  const resolvedPageTitle = pathname === "/admin/audit" ? "Audit Activity" : pageTitle;
+  const resolvedPageDescription =
+    pathname === "/admin/audit"
+      ? "Review admin event history, recent operational changes, and system-facing governance actions from one dedicated audit page."
+      : pageDescription;
+
   return (
     <DashboardShell
       roleLabel="Admin"
-      pageTitle={pageTitle}
-      pageDescription={pageDescription}
+      pageTitle={resolvedPageTitle}
+      pageDescription={resolvedPageDescription}
       navigation={adminNavigation.map((item) => ({
         ...item,
-        isActive: item.href === activeHref,
+        isActive: item.href === resolvedActiveHref,
       }))}
     >
       {children}
