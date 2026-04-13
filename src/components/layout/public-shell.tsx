@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { ContentCanvas, PageContainer } from "@/components/ui/shell-primitives";
 import { routes } from "@/lib/routes";
 
 type PublicShellProps = {
@@ -9,18 +10,22 @@ type PublicShellProps = {
 
 export function PublicShell({ children }: PublicShellProps) {
   return (
-    <div className="public-shell">
-      <header className="public-shell__header">
-        <div>
-          <p className="shell__eyebrow">Public shell baseline</p>
-          <h1>Online Examination Assessment System</h1>
-        </div>
-        <nav className="shell__links" aria-label="Public navigation">
-          <Link href={routes.home}>Landing</Link>
-          <Link href={routes.login}>Login</Link>
-        </nav>
-      </header>
-      <main className="public-shell__main">{children}</main>
+    <div className="shell-frame shell-frame--public">
+      <PageContainer className="shell-frame__container" width="wide">
+        <header className="shell-header">
+          <div className="shell-header__brand">
+            <p className="shell-eyebrow">Public shell baseline</p>
+            <h1>Online Examination Assessment System</h1>
+          </div>
+          <nav className="shell-links" aria-label="Public navigation">
+            <Link href={routes.home}>Landing</Link>
+            <Link href={routes.login}>Login</Link>
+          </nav>
+        </header>
+        <ContentCanvas as="main" className="public-shell__main" layout="split">
+          {children}
+        </ContentCanvas>
+      </PageContainer>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { PublicShell } from "@/components/layout/public-shell";
 import { PlaceholderPanel } from "@/components/ui/placeholder-panel";
+import { SurfaceCard } from "@/components/ui/shell-primitives";
 import { routes } from "@/lib/routes";
 
 export default function LandingPage() {
@@ -23,9 +24,9 @@ export default function LandingPage() {
         description="Other owners can build against one routing contract instead of inventing parallel entry structures."
         items={[routes.home, routes.login, routes.dashboard]}
       />
-      <div className="panel">
-        <p className="panel__eyebrow">Next step for users</p>
-        <div className="panel__copy">
+      <SurfaceCard>
+        <p className="surface-card__eyebrow">Next step for users</p>
+        <div className="surface-card__copy">
           <h2>Authentication entry is available at /login</h2>
           <p>
             Sign-in handling is intentionally deferred until the session and
@@ -33,10 +34,10 @@ export default function LandingPage() {
             shell ownership boundary.
           </p>
         </div>
-        <div className="shell__links">
+        <div className="shell-links">
           <Link href={routes.login}>Go to login</Link>
         </div>
-      </div>
+      </SurfaceCard>
     </PublicShell>
   );
 }

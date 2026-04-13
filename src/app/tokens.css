@@ -1,0 +1,55 @@
+:root {
+  --color-primary-ink: #102a43;
+  --color-primary-navy: #1f4f82;
+  --color-accent-teal: #0f766e;
+  --color-soft-sky-surface: #f5f8fc;
+  --color-panel-tint: #eaf1f7;
+  --color-border-slate: #d5dfea;
+  --color-body-text: #0f172a;
+  --color-muted-text: #475569;
+  --color-white-surface: #ffffff;
+
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-danger: #b42318;
+  --color-info: #0369a1;
+
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-40: 40px;
+  --space-48: 48px;
+  --space-64: 64px;
+
+  --radius-page-panel: 20px;
+  --radius-card: 16px;
+  --radius-input: 12px;
+  --radius-button: 12px;
+  --radius-pill: 999px;
+
+  --font-heading: "Manrope", "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", monospace;
+
+  --text-display: clamp(2.5rem, 4vw, 3rem);
+  --text-page-title: clamp(1.75rem, 2.6vw, 2rem);
+  --text-section-title: clamp(1.25rem, 2vw, 1.5rem);
+  --text-card-title: 1.125rem;
+  --text-body: 1rem;
+  --text-caption: 0.8125rem;
+
+  --shadow-soft:
+    0 1px 2px rgba(16, 42, 67, 0.04),
+    0 18px 40px rgba(16, 42, 67, 0.08);
+  --shadow-quiet:
+    0 1px 2px rgba(16, 42, 67, 0.03),
+    0 10px 24px rgba(16, 42, 67, 0.05);
+
+  --content-width: 1200px;
+  --content-width-wide: 1320px;
+  --sidebar-width: 288px;
+}
