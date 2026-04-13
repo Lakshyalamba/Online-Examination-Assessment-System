@@ -1,14 +1,38 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { QUESTION_BANK_SAMPLE_ENTRIES } from "../../questions/question-bank/question-bank.data.js";
 import {
+  addDraftExamSection,
+  addQuestionToDraftExamSection,
   createDraftExamAuthoringDraft,
   createDraftExamSummary,
+  getDraftExamMappedQuestionCount,
+  getDraftExamSectionTotalMarks,
+  getDraftExamTotalMarks,
   getDraftExamWindowDurationMinutes,
+  isQuestionMappedInDraft,
+  moveDraftExamQuestion,
+  moveDraftExamSection,
   normalizeDraftExamAuthoringDraft,
   parseDraftExamInstructions,
+  removeQuestionFromDraftExamSection,
+  updateDraftExamQuestionMarks,
+  updateDraftExamSectionTitle,
   validateDraftExamAuthoringDraft,
 } from "./exam-authoring-form.js";
+
+const getQuestionBankEntry = (questionId: string) => {
+  const entry = QUESTION_BANK_SAMPLE_ENTRIES.find(
+    (candidate) => candidate.id === questionId,
+  );
+
+  if (!entry) {
+    throw new Error(`Missing seeded question: ${questionId}`);
+  }
+
+  return entry;
+};
 
 test("draft exam validation accepts valid metadata and persists parsed instructions", () => {
   const draft = createDraftExamAuthoringDraft({
@@ -41,6 +65,7 @@ test("draft exam validation accepts valid metadata and persists parsed instructi
   assert.equal(normalizedDraft.title, "Database Systems Midterm");
   assert.equal(normalizedDraft.code, "DBMS-301");
   assert.equal(normalizedDraft.instructionsText.includes("Write answers clearly."), true);
+  assert.deepEqual(normalizedDraft.sections, []);
 });
 
 test("schedule validation blocks reversed exam windows", () => {
@@ -113,5 +138,172 @@ test("draft exam summaries keep normalized metadata and derived window length", 
   assert.deepEqual(parseDraftExamInstructions("Line one\n\nLine two"), [
     "Line one",
     "Line two",
+  ]);
+});
+
+test("sections can be added, renamed, and reordered with stable sectionOrder values", () => {
+  let draft = createDraftExamAuthoringDraft();
+
+  draft = addDraftExamSection(draft);
+  draft = addDraftExamSection(draft, { title: "Written Responses" });
+  draft = updateDraftExamSectionTitle(
+    draft,
+    draft.sections[0]?.sectionId ?? "",
+    "Objective Core",
+  );
+  draft = moveDraftExamSection(draft, draft.sections[1]?.sectionId ?? "", "up");
+
+  assert.deepEqual(
+    draft.sections.map((section) => ({
+      title: section.title,
+      sectionOrder: section.sectionOrder,
+    })),
+    [
+      { title: "Written Responses", sectionOrder: 1 },
+      { title: "Objective Core", sectionOrder: 2 },
+    ],
+  );
+});
+
+test("questions can be mapped, reordered, deduplicated, and removed inside sections", () => {
+  let draft = addDraftExamSection(createDraftExamAuthoringDraft(), {
+    title: "Section 1",
+  });
+  const sectionId = draft.sections[0]?.sectionId ?? "";
+
+  draft = addQuestionToDraftExamSection(draft, sectionId, getQuestionBankEntry("Q-204"));
+  draft = addQuestionToDraftExamSection(draft, sectionId, getQuestionBankEntry("Q-248"));
+  draft = addQuestionToDraftExamSection(draft, sectionId, getQuestionBankEntry("Q-204"));
+
+  assert.equal(getDraftExamMappedQuestionCount(draft), 2);
+  assert.equal(isQuestionMappedInDraft(draft, "Q-204"), true);
+
+  const secondQuestionId = draft.sections[0]?.questions[1]?.examQuestionId ?? "";
+  draft = moveDraftExamQuestion(draft, sectionId, secondQuestionId, "up");
+
+  assert.deepEqual(
+    draft.sections[0]?.questions.map((question) => question.snapshot.sourceQuestionId),
+    ["Q-248", "Q-204"],
+  );
+  assert.deepEqual(
+    draft.sections[0]?.questions.map((question) => question.questionOrder),
+    [1, 2],
+  );
+
+  const firstQuestionId = draft.sections[0]?.questions[0]?.examQuestionId ?? "";
+  draft = removeQuestionFromDraftExamSection(draft, sectionId, firstQuestionId);
+
+  assert.deepEqual(
+    draft.sections[0]?.questions.map((question) => ({
+      sourceQuestionId: question.snapshot.sourceQuestionId,
+      questionOrder: question.questionOrder,
+    })),
+    [{ sourceQuestionId: "Q-204", questionOrder: 1 }],
+  );
+});
+
+test("mapped question marks persist through validation and saved draft normalization", () => {
+  let draft = createDraftExamAuthoringDraft({
+    title: "Database Systems Midterm",
+    code: "DBMS-301",
+    instructionsText: "Read carefully.\nShow working where required.",
+    durationMinutes: "90",
+    windowStartsAt: "2026-04-20T09:00",
+    windowEndsAt: "2026-04-20T10:30",
+  });
+
+  draft = addDraftExamSection(draft, { title: "Objective Core" });
+  const sectionId = draft.sections[0]?.sectionId ?? "";
+  draft = addQuestionToDraftExamSection(draft, sectionId, getQuestionBankEntry("Q-204"));
+  draft = addQuestionToDraftExamSection(draft, sectionId, getQuestionBankEntry("Q-241"));
+  draft = updateDraftExamQuestionMarks(
+    draft,
+    sectionId,
+    draft.sections[0]?.questions[0]?.examQuestionId ?? "",
+    "5",
+  );
+  draft = updateDraftExamQuestionMarks(
+    draft,
+    sectionId,
+    draft.sections[0]?.questions[1]?.examQuestionId ?? "",
+    "3",
+  );
+
+  const result = validateDraftExamAuthoringDraft(draft);
+
+  assert.equal(result.success, true);
+
+  if (!result.success) {
+    throw new Error("Expected mapped draft exam to validate");
+  }
+
+  const normalizedDraft = normalizeDraftExamAuthoringDraft(draft, result.data);
+  const summary = createDraftExamSummary(result.data);
+
+  assert.equal(getDraftExamSectionTotalMarks(normalizedDraft.sections[0]!), 8);
+  assert.equal(getDraftExamTotalMarks(normalizedDraft), 8);
+  assert.equal(summary.sections[0]?.questions[0]?.marks, 5);
+  assert.equal(summary.sections[0]?.questions[1]?.marks, 3);
+});
+
+test("saving blocks empty sections and invalid mapped question marks", () => {
+  let emptySectionDraft = addDraftExamSection(
+    createDraftExamAuthoringDraft({
+      title: "Operating Systems Quiz",
+      code: "OS-220",
+      instructionsText: "Attempt all questions.",
+      durationMinutes: "45",
+      windowStartsAt: "2026-04-18T09:00",
+      windowEndsAt: "2026-04-18T10:00",
+    }),
+    { title: "Part A" },
+  );
+  const emptySectionResult = validateDraftExamAuthoringDraft(emptySectionDraft);
+
+  assert.equal(emptySectionResult.success, false);
+
+  if (emptySectionResult.success) {
+    throw new Error("Expected empty section validation to fail");
+  }
+
+  assert.deepEqual(emptySectionResult.errors.sectionFields[0]?.questions, [
+    "Each section must include at least one mapped question",
+  ]);
+
+  let invalidMarksDraft = addDraftExamSection(
+    createDraftExamAuthoringDraft({
+      title: "Network Security Quiz",
+      code: "CNS-214",
+      instructionsText: "Use precise language.",
+      durationMinutes: "60",
+      windowStartsAt: "2026-04-25T14:00",
+      windowEndsAt: "2026-04-25T15:15",
+    }),
+    { title: "Section 1" },
+  );
+  const invalidSectionId = invalidMarksDraft.sections[0]?.sectionId ?? "";
+
+  invalidMarksDraft = addQuestionToDraftExamSection(
+    invalidMarksDraft,
+    invalidSectionId,
+    getQuestionBankEntry("Q-238"),
+  );
+  invalidMarksDraft = updateDraftExamQuestionMarks(
+    invalidMarksDraft,
+    invalidSectionId,
+    invalidMarksDraft.sections[0]?.questions[0]?.examQuestionId ?? "",
+    "0",
+  );
+
+  const invalidMarksResult = validateDraftExamAuthoringDraft(invalidMarksDraft);
+
+  assert.equal(invalidMarksResult.success, false);
+
+  if (invalidMarksResult.success) {
+    throw new Error("Expected invalid marks validation to fail");
+  }
+
+  assert.deepEqual(invalidMarksResult.errors.questionFields[0]?.[0]?.marks, [
+    "Marks must be at least 1",
   ]);
 });

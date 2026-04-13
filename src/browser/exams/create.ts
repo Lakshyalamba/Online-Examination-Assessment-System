@@ -1,15 +1,24 @@
 import {
   DRAFT_EXAM_AUTHORING_SCENARIOS,
+  addDraftExamSection,
+  addQuestionToDraftExamSection,
   createDraftExamAuthoringDraft,
   createDraftExamSummary,
   createEmptyDraftExamFormErrors,
+  moveDraftExamQuestion,
+  moveDraftExamSection,
   normalizeDraftExamAuthoringDraft,
+  removeDraftExamSection,
+  removeQuestionFromDraftExamSection,
   type DraftExamAuthoringDraft,
   type DraftExamSummary,
   updateDraftExamField,
+  updateDraftExamQuestionMarks,
+  updateDraftExamSectionTitle,
   validateDraftExamAuthoringDraft,
 } from "../../modules/exams/index.js";
 import { renderCreateDraftExamPage } from "../../modules/exams/create-exam/ui/create-draft-exam-page.js";
+import { QUESTION_BANK_SAMPLE_ENTRIES } from "../../modules/questions/question-bank/question-bank.data.js";
 
 const root = document.querySelector<HTMLElement>("[data-create-exam-root]");
 
@@ -19,12 +28,33 @@ if (!root) {
 
 const query = new URLSearchParams(window.location.search);
 
-type DraftExamFieldKey = keyof DraftExamAuthoringDraft;
+type DraftExamFieldKey = keyof Omit<DraftExamAuthoringDraft, "sections">;
 type FocusableField =
   | HTMLInputElement
   | HTMLTextAreaElement
   | HTMLSelectElement
   | null;
+
+const getInitialActiveSectionId = (draft: DraftExamAuthoringDraft) =>
+  draft.sections[0]?.sectionId ?? null;
+
+const getSafeActiveSectionId = (
+  draft: DraftExamAuthoringDraft,
+  preferredSectionId: string | null,
+) => {
+  if (draft.sections.length === 0) {
+    return null;
+  }
+
+  if (
+    preferredSectionId &&
+    draft.sections.some((section) => section.sectionId === preferredSectionId)
+  ) {
+    return preferredSectionId;
+  }
+
+  return draft.sections[0]?.sectionId ?? null;
+};
 
 const getDraftWithQueryOverrides = (draft: DraftExamAuthoringDraft) => {
   let nextDraft = draft;
@@ -64,6 +94,7 @@ const getInitialDraft = () => {
 const initialDraft = getInitialDraft();
 
 const state: {
+  activeSectionId: string | null;
   draft: DraftExamAuthoringDraft;
   baseDraft: DraftExamAuthoringDraft;
   errors: ReturnType<typeof createEmptyDraftExamFormErrors>;
@@ -73,6 +104,7 @@ const state: {
     | { tone: "error"; title: string; detail: string }
     | null;
 } = {
+  activeSectionId: getInitialActiveSectionId(initialDraft),
   draft: structuredClone(initialDraft),
   baseDraft: structuredClone(initialDraft),
   errors: createEmptyDraftExamFormErrors(),
@@ -149,9 +181,11 @@ const restoreFocus = (focusSnapshot: ReturnType<typeof captureFocus>) => {
 
 const render = (focusSnapshot: ReturnType<typeof captureFocus> = null) => {
   root.innerHTML = renderCreateDraftExamPage({
+    activeSectionId: state.activeSectionId,
     draft: state.draft,
     errors: state.errors,
     lastSavedExam: state.lastSavedExam,
+    questionBankEntries: QUESTION_BANK_SAMPLE_ENTRIES,
     status: state.status,
   });
   restoreFocus(focusSnapshot);
@@ -160,6 +194,14 @@ const render = (focusSnapshot: ReturnType<typeof captureFocus> = null) => {
 const resetFeedback = () => {
   state.errors = createEmptyDraftExamFormErrors();
   state.status = null;
+};
+
+const syncStateDraft = (
+  nextDraft: DraftExamAuthoringDraft,
+  preferredSectionId: string | null = state.activeSectionId,
+) => {
+  state.draft = nextDraft;
+  state.activeSectionId = getSafeActiveSectionId(nextDraft, preferredSectionId);
 };
 
 const submitDraft = () => {
@@ -171,7 +213,7 @@ const submitDraft = () => {
       tone: "error",
       title: "Draft exam blocked",
       detail:
-        "Fix the highlighted metadata and schedule issues before this draft exam can be saved.",
+        "Fix the highlighted metadata, section, and question mapping issues before this draft exam can be saved.",
     };
     render();
     return;
@@ -179,12 +221,17 @@ const submitDraft = () => {
 
   state.errors = createEmptyDraftExamFormErrors();
   state.draft = normalizeDraftExamAuthoringDraft(state.draft, result.data);
+  state.baseDraft = structuredClone(state.draft);
+  state.activeSectionId = getSafeActiveSectionId(
+    state.draft,
+    state.activeSectionId,
+  );
   state.lastSavedExam = createDraftExamSummary(result.data);
   state.status = {
     tone: "success",
     title: "Draft exam saved",
     detail:
-      "The exam metadata and schedule passed validation and the draft foundation is ready for later authoring steps.",
+      "The metadata, sections, and mapped question snapshots passed validation and the draft builder is ready for later exam-authoring steps.",
   };
   render();
 };
@@ -196,17 +243,48 @@ root.addEventListener("input", (event) => {
     return;
   }
 
-  const field = target.dataset.field as DraftExamFieldKey | undefined;
+  const focusSnapshot = captureFocus();
 
-  if (!field) {
+  if (target.dataset.field) {
+    const field = target.dataset.field as DraftExamFieldKey;
+
+    syncStateDraft(updateDraftExamField(state.draft, field, target.value));
+    resetFeedback();
+    render(focusSnapshot);
     return;
   }
 
-  const focusSnapshot = captureFocus();
+  if (target.dataset.sectionField === "title" && target.dataset.sectionId) {
+    syncStateDraft(
+      updateDraftExamSectionTitle(
+        state.draft,
+        target.dataset.sectionId,
+        target.value,
+      ),
+      target.dataset.sectionId,
+    );
+    resetFeedback();
+    render(focusSnapshot);
+    return;
+  }
 
-  state.draft = updateDraftExamField(state.draft, field, target.value);
-  resetFeedback();
-  render(focusSnapshot);
+  if (
+    target.dataset.questionField === "marks" &&
+    target.dataset.sectionId &&
+    target.dataset.examQuestionId
+  ) {
+    syncStateDraft(
+      updateDraftExamQuestionMarks(
+        state.draft,
+        target.dataset.sectionId,
+        target.dataset.examQuestionId,
+        target.value,
+      ),
+      target.dataset.sectionId,
+    );
+    resetFeedback();
+    render(focusSnapshot);
+  }
 });
 
 root.addEventListener("click", (event) => {
@@ -222,9 +300,109 @@ root.addEventListener("click", (event) => {
     return;
   }
 
+  const focusSnapshot = captureFocus();
+  const sectionId = actionTrigger.dataset.sectionId ?? null;
+  const examQuestionId = actionTrigger.dataset.examQuestionId ?? null;
+
   switch (actionTrigger.dataset.action) {
+    case "add-section": {
+      const nextDraft = addDraftExamSection(state.draft);
+      const nextSectionId = nextDraft.sections.at(-1)?.sectionId ?? null;
+
+      syncStateDraft(nextDraft, nextSectionId);
+      resetFeedback();
+      render();
+      return;
+    }
+    case "activate-section":
+      state.activeSectionId = sectionId;
+      render();
+      return;
+    case "move-section-up":
+    case "move-section-down":
+      if (!sectionId) {
+        return;
+      }
+
+      syncStateDraft(
+        moveDraftExamSection(
+          state.draft,
+          sectionId,
+          actionTrigger.dataset.action === "move-section-up" ? "up" : "down",
+        ),
+        sectionId,
+      );
+      resetFeedback();
+      render(focusSnapshot);
+      return;
+    case "remove-section":
+      if (!sectionId) {
+        return;
+      }
+
+      syncStateDraft(
+        removeDraftExamSection(state.draft, sectionId),
+        state.activeSectionId === sectionId ? null : state.activeSectionId,
+      );
+      resetFeedback();
+      render();
+      return;
+    case "map-question": {
+      const questionId = actionTrigger.dataset.questionId ?? null;
+      const activeSectionId = state.activeSectionId;
+      const questionEntry = QUESTION_BANK_SAMPLE_ENTRIES.find(
+        (entry) => entry.id === questionId,
+      );
+
+      if (!questionEntry || !activeSectionId) {
+        return;
+      }
+
+      syncStateDraft(
+        addQuestionToDraftExamSection(state.draft, activeSectionId, questionEntry),
+        activeSectionId,
+      );
+      resetFeedback();
+      render();
+      return;
+    }
+    case "move-question-up":
+    case "move-question-down":
+      if (!sectionId || !examQuestionId) {
+        return;
+      }
+
+      syncStateDraft(
+        moveDraftExamQuestion(
+          state.draft,
+          sectionId,
+          examQuestionId,
+          actionTrigger.dataset.action === "move-question-up" ? "up" : "down",
+        ),
+        sectionId,
+      );
+      resetFeedback();
+      render();
+      return;
+    case "remove-question":
+      if (!sectionId || !examQuestionId) {
+        return;
+      }
+
+      syncStateDraft(
+        removeQuestionFromDraftExamSection(
+          state.draft,
+          sectionId,
+          examQuestionId,
+        ),
+        sectionId,
+      );
+      resetFeedback();
+      render();
+      return;
     case "reset-draft":
       state.draft = structuredClone(state.baseDraft);
+      state.activeSectionId = getInitialActiveSectionId(state.baseDraft);
       state.errors = createEmptyDraftExamFormErrors();
       state.status = null;
       render();

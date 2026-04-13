@@ -1,8 +1,16 @@
 import { z } from "zod";
 
+import {
+  QUESTION_DIFFICULTIES,
+  QUESTION_REVIEW_MODES,
+  QUESTION_TYPES,
+} from "../../questions/domain/question.types.js";
+
 const TITLE_MAX_LENGTH = 180;
 const CODE_MAX_LENGTH = 32;
 const INSTRUCTION_MAX_LENGTH = 500;
+const SECTION_TITLE_MAX_LENGTH = 120;
+const ID_MAX_LENGTH = 128;
 
 const requiredText = (fieldLabel: string, maxLength: number) =>
   z
@@ -53,6 +61,70 @@ export const examCodeSchema = requiredText("Exam code", CODE_MAX_LENGTH)
     "Exam code must use letters, numbers, and hyphens only",
   );
 
+const draftExamQuestionSnapshotSchema = z.object({
+  sourceQuestionId: requiredText("Source question id", ID_MAX_LENGTH),
+  stem: requiredText("Question stem", 5_000),
+  type: z.enum(QUESTION_TYPES),
+  difficulty: z.enum(QUESTION_DIFFICULTIES),
+  topicId: requiredText("Topic id", ID_MAX_LENGTH),
+  topicName: requiredText("Topic name", 120),
+  reviewMode: z.enum(QUESTION_REVIEW_MODES),
+});
+
+const draftExamQuestionSchema = z.object({
+  examQuestionId: requiredText("Exam question id", ID_MAX_LENGTH),
+  questionOrder: z.coerce
+    .number()
+    .int("Question order must be a whole number")
+    .min(1, "Question order must be at least 1"),
+  marks: z.coerce
+    .number()
+    .int("Marks must be a whole number")
+    .min(1, "Marks must be at least 1")
+    .max(100, "Marks must be at most 100"),
+  snapshot: draftExamQuestionSnapshotSchema,
+});
+
+const draftExamSectionSchema = z
+  .object({
+    sectionId: requiredText("Section id", ID_MAX_LENGTH),
+    title: requiredText("Section title", SECTION_TITLE_MAX_LENGTH),
+    sectionOrder: z.coerce
+      .number()
+      .int("Section order must be a whole number")
+      .min(1, "Section order must be at least 1"),
+    questions: z
+      .array(draftExamQuestionSchema)
+      .min(1, "Each section must include at least one mapped question")
+      .max(30, "Each section supports at most 30 mapped questions"),
+  })
+  .superRefine((section, context) => {
+    const seenQuestionOrders = new Set<number>();
+    const seenExamQuestionIds = new Set<string>();
+
+    section.questions.forEach((question, index) => {
+      if (seenQuestionOrders.has(question.questionOrder)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Question order values must be unique within a section",
+          path: ["questions", index, "questionOrder"],
+        });
+      } else {
+        seenQuestionOrders.add(question.questionOrder);
+      }
+
+      if (seenExamQuestionIds.has(question.examQuestionId)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Exam question ids must stay unique within a section",
+          path: ["questions", index],
+        });
+      } else {
+        seenExamQuestionIds.add(question.examQuestionId);
+      }
+    });
+  });
+
 export const draftExamSchema = z
   .object({
     title: requiredText("Exam title", TITLE_MAX_LENGTH),
@@ -68,6 +140,7 @@ export const draftExamSchema = z
       .max(600, "Duration must be at most 600 minutes"),
     windowStartsAt: dateField("Window start"),
     windowEndsAt: dateField("Window end"),
+    sections: z.array(draftExamSectionSchema).max(12, "At most twelve sections are supported"),
     status: z.literal("DRAFT"),
   })
   .superRefine((exam, context) => {
@@ -91,6 +164,34 @@ export const draftExamSchema = z
         path: ["durationMinutes"],
       });
     }
+
+    const seenSectionOrders = new Set<number>();
+    const seenSourceQuestionIds = new Set<string>();
+
+    exam.sections.forEach((section, sectionIndex) => {
+      if (seenSectionOrders.has(section.sectionOrder)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Section order values must be unique",
+          path: ["sections", sectionIndex, "sectionOrder"],
+        });
+      } else {
+        seenSectionOrders.add(section.sectionOrder);
+      }
+
+      section.questions.forEach((question, questionIndex) => {
+        if (seenSourceQuestionIds.has(question.snapshot.sourceQuestionId)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              "Each source question can only be mapped once in a draft exam",
+            path: ["sections", sectionIndex, "questions", questionIndex],
+          });
+        } else {
+          seenSourceQuestionIds.add(question.snapshot.sourceQuestionId);
+        }
+      });
+    });
   });
 
 export type DraftExamInput = z.input<typeof draftExamSchema>;
