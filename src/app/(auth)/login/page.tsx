@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 
 import { auth } from "@/auth";
+import { getDashboardRouteForRole } from "@/lib/auth/rbac";
 import { SurfaceCard } from "@/components/ui/shell-primitives";
 import { routes } from "@/lib/routes";
 import { LoginForm } from "@/modules/auth/components/login-form";
@@ -21,7 +22,7 @@ export default async function LoginPage() {
   const session = await auth();
 
   if (session?.user) {
-    redirect(routes.dashboard);
+    redirect(getDashboardRouteForRole(session.user.role));
   }
 
   return (
@@ -31,8 +32,8 @@ export default async function LoginPage() {
         <h2>Access the examination workspace</h2>
         <p>
           Use institutional credentials for your assigned role. Credentials
-          auth, session creation, and logout are now wired, while route guards
-          and role redirects land in the next step.
+          auth, session creation, role-aware redirects, and protected dashboard
+          access are now wired into the shared application shell.
         </p>
       </div>
 

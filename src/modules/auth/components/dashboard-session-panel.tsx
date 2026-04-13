@@ -19,8 +19,8 @@ export function DashboardSessionPanel({
           <p className="surface-card__eyebrow">Session status</p>
           <h2>No active session is attached yet.</h2>
           <p>
-            Credentials auth is wired now, but protected route enforcement lands
-            in the next step. Sign in to verify the session plumbing.
+            Protected routes now resolve before this panel renders. Sign in to
+            continue into the authenticated workspace.
           </p>
         </div>
         <div className="session-panel__actions">

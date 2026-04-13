@@ -29,7 +29,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
           >
             <Link href={routes.dashboard}>Entry</Link>
             <span>Role nav lands in step 6</span>
-            <span>Guards land in step 5</span>
+            <span>Role guards active</span>
           </nav>
         </ContentCanvas>
       </aside>

@@ -4,6 +4,7 @@ import { AuthError } from "next-auth";
 import { z } from "zod";
 
 import { signIn, signOut } from "@/auth";
+import { getDashboardRouteForRole } from "@/lib/auth/rbac";
 import { routes } from "@/lib/routes";
 import {
   initialLoginFormState,
@@ -70,7 +71,7 @@ export async function loginWithCredentials(
     await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirectTo: routes.dashboard,
+      redirectTo: getDashboardRouteForRole(result.user.role),
     });
   } catch (error) {
     if (error instanceof AuthError) {

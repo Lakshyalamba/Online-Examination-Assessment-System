@@ -764,6 +764,22 @@ ul {
   color: var(--color-success);
 }
 
+.role-dashboard-entry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-20);
+}
+
+.role-dashboard-entry__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.role-dashboard-entry__header p:last-child {
+  color: var(--color-muted-text);
+}
+
 .dashboard-shell {
   display: grid;
   grid-template-columns: minmax(240px, var(--sidebar-width)) minmax(0, 1fr);
