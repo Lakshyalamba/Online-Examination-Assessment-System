@@ -7,11 +7,54 @@ import { logoutUser } from "@/modules/auth/actions";
 
 type DashboardSessionPanelProps = {
   session: Session | null;
+  compact?: boolean;
 };
 
 export function DashboardSessionPanel({
   session,
+  compact = false,
 }: DashboardSessionPanelProps) {
+  if (compact) {
+    if (!session?.user) {
+      return (
+        <SurfaceCard className="session-panel session-panel--compact" padding="compact" tone="tint">
+          <div className="session-panel__copy">
+            <p className="surface-card__eyebrow">Session</p>
+            <h2>Sign in required</h2>
+            <p>Protected routes redirect before dashboard tools become available.</p>
+          </div>
+          <div className="session-panel__actions">
+            <Link className="button-link button-link--primary" href={routes.login}>
+              Sign in
+            </Link>
+          </div>
+        </SurfaceCard>
+      );
+    }
+
+    return (
+      <SurfaceCard
+        className="session-panel session-panel--compact"
+        padding="compact"
+        tone="tint"
+      >
+        <div className="session-panel__copy">
+          <p className="surface-card__eyebrow">Authenticated session</p>
+          <h2>{session.user.name}</h2>
+          <p>{session.user.email}</p>
+        </div>
+        <div className="session-panel__meta">
+          <span className="session-pill">{session.user.role}</span>
+          <form action={logoutUser} className="session-panel__actions">
+            <button className="button-link button-link--secondary" type="submit">
+              Log out
+            </button>
+          </form>
+        </div>
+      </SurfaceCard>
+    );
+  }
+
   if (!session?.user) {
     return (
       <SurfaceCard className="session-panel" tone="tint">

@@ -14,8 +14,10 @@ export default async function DashboardLayout({
   const session = await auth();
 
   return (
-    <DashboardShell>
-      <DashboardSessionPanel session={session} />
+    <DashboardShell
+      headerUtility={<DashboardSessionPanel compact session={session} />}
+      user={session?.user ?? null}
+    >
       {children}
     </DashboardShell>
   );
