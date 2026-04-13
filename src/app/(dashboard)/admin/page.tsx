@@ -1,5 +1,15 @@
 import type { CSSProperties } from "react";
 
+import { UserManagementTable } from "../../../components/admin/user-management-table";
+import {
+  filterAdminUserRecords,
+  listAdminUserRecords,
+  summarizeAdminUserRecords,
+  type AdminUserListFilters,
+  type AdminUserRole,
+  type AdminUserStatus,
+} from "../../../modules/admin";
+
 const heroStyle: CSSProperties = {
   display: "grid",
   gap: "20px",
@@ -100,6 +110,22 @@ const sectionTitleStyle: CSSProperties = {
   lineHeight: 1.2,
 };
 
+const parseRoleFilter = (value?: string): AdminUserRole | "ALL" => {
+  if (value === "ADMIN" || value === "EXAMINER" || value === "STUDENT") {
+    return value;
+  }
+
+  return "ALL";
+};
+
+const parseStatusFilter = (value?: string): AdminUserStatus | "ALL" => {
+  if (value === "ACTIVE" || value === "INACTIVE") {
+    return value;
+  }
+
+  return "ALL";
+};
+
 const metrics = [
   {
     label: "Total Users",
@@ -141,7 +167,24 @@ const recentActivity = [
   },
 ];
 
-export default function AdminDashboardPage() {
+type AdminDashboardPageProps = {
+  searchParams?: {
+    q?: string;
+    role?: string;
+    status?: string;
+  };
+};
+
+export default function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
+  const filters: Required<AdminUserListFilters> = {
+    query: searchParams?.q?.trim() ?? "",
+    role: parseRoleFilter(searchParams?.role),
+    status: parseStatusFilter(searchParams?.status),
+  };
+  const allUsers = listAdminUserRecords();
+  const visibleUsers = filterAdminUserRecords(allUsers, filters);
+  const userSummary = summarizeAdminUserRecords(allUsers, visibleUsers);
+
   return (
     <div style={{ display: "grid", gap: "24px" }}>
       <section id="overview" style={heroStyle}>
@@ -180,7 +223,19 @@ export default function AdminDashboardPage() {
       </section>
 
       <section style={dashboardGridStyle}>
-        <article id="audit-activity" style={sectionCardStyle}>
+        <article id="user-operations" style={sectionCardStyle}>
+          <div style={{ display: "grid", gap: "8px" }}>
+            <h2 style={sectionTitleStyle}>User Management</h2>
+            <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.6 }}>
+              Admins can now scan a structured user table, search by name or email, and combine role and
+              status filters without leaving the dashboard.
+            </p>
+          </div>
+
+          <UserManagementTable users={visibleUsers} filters={filters} summary={userSummary} />
+        </article>
+
+        <aside id="audit-activity" style={sectionCardStyle}>
           <div style={{ display: "grid", gap: "8px" }}>
             <h2 style={sectionTitleStyle}>Recent Operational Activity</h2>
             <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.6 }}>
@@ -213,16 +268,6 @@ export default function AdminDashboardPage() {
               </li>
             ))}
           </ul>
-        </article>
-
-        <aside id="user-operations" style={sectionCardStyle}>
-          <div style={{ display: "grid", gap: "8px" }}>
-            <h2 style={sectionTitleStyle}>Operational Panels</h2>
-            <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.6 }}>
-              The right rail reserves space for role distribution, account actions, and review pressure without
-              making this step data-heavy yet.
-            </p>
-          </div>
 
           <div style={subGridStyle}>
             <div style={panelStyle}>
