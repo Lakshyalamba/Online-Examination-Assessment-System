@@ -1,8 +1,22 @@
-import { escapeHtml } from "../../../questions/question-bank/ui/question-bank-ui.shared";
-import type { DraftExamSummary } from "../../domain/exam.types";
+import {
+  escapeHtml,
+  renderQuestionBankChip,
+} from "../../../questions/question-bank/ui/question-bank-ui.shared";
+import {
+  QUESTION_DIFFICULTY_LABELS,
+  QUESTION_TYPE_LABELS,
+} from "../../../questions/utils/question-metadata";
+import type { QuestionBankEntry } from "../../../questions/question-bank/question-bank.types";
 import type {
+  DraftExamSummary,
+  ExamAssignmentCandidate,
+} from "../../domain/exam.types";
+import type {
+  DraftExamAssignmentAuthoringDraft,
   DraftExamAuthoringDraft,
   DraftExamAuthoringFormErrors,
+  DraftExamPublishReadiness,
+  DraftExamSectionAuthoringDraft,
 } from "../exam-authoring-form";
 import {
   formatDraftExamDateTime,

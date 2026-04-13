@@ -292,7 +292,7 @@ test("student assignments can be added, deduplicated, and removed from the draft
 });
 
 test("saving blocks empty sections and invalid mapped question marks", () => {
-  let emptySectionDraft = addDraftExamSection(
+  const emptySectionDraft = addDraftExamSection(
     createDraftExamAuthoringDraft({
       title: "Operating Systems Quiz",
       code: "OS-220",

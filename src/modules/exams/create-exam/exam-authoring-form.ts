@@ -1,4 +1,13 @@
-import type { DraftExamSummary, DraftExamValues } from "../domain/exam.types";
+import type {
+  DraftExamSectionRecord,
+  DraftExamAssignmentRecord,
+  ExamAssignmentCandidate,
+  DraftExamQuestionSnapshot,
+  DraftExamSummary,
+  DraftExamValues,
+  ExamAuthoringStatus,
+} from "../domain/exam.types";
+import type { QuestionBankEntry } from "../../questions/question-bank/question-bank.types";
 import {
   draftExamSchema,
   type DraftExamValidatedValues,
@@ -18,8 +27,7 @@ export interface DraftExamSectionAuthoringDraft {
   questions: DraftExamQuestionAuthoringDraft[];
 }
 
-export interface DraftExamAssignmentAuthoringDraft
-  extends DraftExamAssignmentRecord {}
+export type DraftExamAssignmentAuthoringDraft = DraftExamAssignmentRecord;
 
 export interface DraftExamAuthoringDraft {
   title: string;

@@ -230,7 +230,6 @@ export const updateAdminUserRole = (
     };
   }
 
-  const nextRole: AdminUserRole = input.role;
   return {
     ok: true,
     records: sortUsers(
@@ -271,7 +270,6 @@ export const updateAdminUserStatus = (
     };
   }
 
-  const nextStatus: AdminUserStatus = input.status;
   return {
     ok: true,
     records: sortUsers(

@@ -4,6 +4,7 @@ export * from "./create-question/objective-question-form";
 export * from "./create-question/objective-question.scenarios";
 export * from "./domain/question.types";
 export * from "./question-bank/question-bank-listing";
+export * from "./question-bank/question-bank.data";
 export * from "./question-bank/question-bank.types";
 export * from "./utils/question-authoring";
 export * from "./utils/question-metadata";

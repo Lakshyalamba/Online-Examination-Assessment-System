@@ -22,6 +22,7 @@ import {
   updateDraftExamSectionTitle,
   validateDraftExamAuthoringDraft,
 } from "../../modules/exams/index";
+import { QUESTION_BANK_SAMPLE_ENTRIES } from "../../modules/questions/index";
 import { renderCreateDraftExamPage } from "../../modules/exams/create-exam/ui/create-draft-exam-page";
 
 const root = document.querySelector<HTMLElement>("[data-create-exam-root]");
