@@ -14,15 +14,17 @@ export function PublicShell({ children }: PublicShellProps) {
       <PageContainer className="shell-frame__container" width="wide">
         <header className="shell-header">
           <div className="shell-header__brand">
-            <p className="shell-eyebrow">Public shell baseline</p>
+            <p className="shell-eyebrow">Academic assessment platform</p>
             <h1>Online Examination Assessment System</h1>
           </div>
           <nav className="shell-links" aria-label="Public navigation">
-            <Link href={routes.home}>Landing</Link>
-            <Link href={routes.login}>Login</Link>
+            <Link href={routes.home}>Overview</Link>
+            <Link className="button-link button-link--primary" href={routes.login}>
+              Sign in
+            </Link>
           </nav>
         </header>
-        <ContentCanvas as="main" className="public-shell__main" layout="split">
+        <ContentCanvas as="main" className="public-shell__main">
           {children}
         </ContentCanvas>
       </PageContainer>

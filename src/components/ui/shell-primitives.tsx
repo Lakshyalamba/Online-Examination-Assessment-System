@@ -1,4 +1,8 @@
-import type { ElementType, ReactNode } from "react";
+import type {
+  ComponentPropsWithoutRef,
+  ElementType,
+  ReactNode,
+} from "react";
 
 import { cn } from "@/lib/class-names";
 
@@ -7,7 +11,7 @@ type PrimitiveTag = ElementType;
 type BasePrimitiveProps = {
   children: ReactNode;
   className?: string;
-};
+} & Omit<ComponentPropsWithoutRef<"div">, "children" | "className">;
 
 type PageContainerProps = BasePrimitiveProps & {
   as?: PrimitiveTag;

@@ -31,9 +31,9 @@
   --radius-button: 12px;
   --radius-pill: 999px;
 
-  --font-heading: "Manrope", "Avenir Next", "Segoe UI", sans-serif;
-  --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", "SFMono-Regular", monospace;
+  --font-heading: var(--font-heading-family, "Manrope"), "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: var(--font-body-family, "IBM Plex Sans"), "Segoe UI", sans-serif;
+  --font-mono: var(--font-mono-family, "IBM Plex Mono"), "SFMono-Regular", monospace;
 
   --text-display: clamp(2.5rem, 4vw, 3rem);
   --text-page-title: clamp(1.75rem, 2.6vw, 2rem);
