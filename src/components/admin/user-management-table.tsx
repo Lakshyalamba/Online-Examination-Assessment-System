@@ -1,15 +1,77 @@
-import type { CSSProperties } from "react";
+"use client";
 
-import type {
-  AdminUserListFilters,
-  AdminUserListSummary,
-  AdminUserRecord,
+import type { CSSProperties } from "react";
+import { useState } from "react";
+
+import {
+  createAdminUserRecord,
+  filterAdminUserRecords,
+  summarizeAdminUserRecords,
+  updateAdminUserRole,
+  updateAdminUserStatus,
+  type AdminUserListFilters,
+  type AdminUserRecord,
 } from "../../modules/admin";
 
 type UserManagementTableProps = {
-  users: readonly AdminUserRecord[];
-  filters: Required<AdminUserListFilters>;
-  summary: AdminUserListSummary;
+  initialUsers: readonly AdminUserRecord[];
+  initialFilters: Required<AdminUserListFilters>;
+};
+
+type NoticeState = {
+  tone: "success" | "error";
+  title: string;
+  message: string;
+} | null;
+
+type CreateUserFormState = {
+  name: string;
+  email: string;
+  role: "ADMIN" | "EXAMINER" | "STUDENT";
+  department: string;
+};
+
+const defaultFilterState: Required<AdminUserListFilters> = {
+  query: "",
+  role: "ALL",
+  status: "ALL",
+};
+
+const defaultCreateFormState: CreateUserFormState = {
+  name: "",
+  email: "",
+  role: "STUDENT",
+  department: "",
+};
+
+const workspaceStyle: CSSProperties = {
+  display: "grid",
+  gap: "18px",
+};
+
+const noticeStyle = (tone: "success" | "error"): CSSProperties => ({
+  display: "grid",
+  gap: "8px",
+  padding: "16px 18px",
+  borderRadius: "18px",
+  border: tone === "success" ? "1px solid rgba(21, 128, 61, 0.18)" : "1px solid rgba(185, 28, 28, 0.16)",
+  background: tone === "success" ? "rgba(240, 253, 244, 0.92)" : "rgba(254, 242, 242, 0.92)",
+});
+
+const createCardStyle: CSSProperties = {
+  display: "grid",
+  gap: "16px",
+  padding: "20px",
+  borderRadius: "22px",
+  background: "rgba(245, 248, 252, 0.96)",
+  border: "1px solid rgba(16, 35, 60, 0.08)",
+};
+
+const createGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: "12px",
+  alignItems: "end",
 };
 
 const toolbarStyle: CSSProperties = {
@@ -59,18 +121,18 @@ const buttonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-const secondaryLinkStyle: CSSProperties = {
+const secondaryButtonStyle: CSSProperties = {
   display: "inline-flex",
   justifyContent: "center",
   alignItems: "center",
   height: "48px",
   padding: "0 18px",
   borderRadius: "12px",
-  textDecoration: "none",
   border: "1px solid #d5dfea",
   background: "#ffffff",
   color: "#10233c",
   fontWeight: 600,
+  cursor: "pointer",
 };
 
 const summaryGridStyle: CSSProperties = {
@@ -116,6 +178,31 @@ const cellStyle: CSSProperties = {
   padding: "16px",
   borderBottom: "1px solid rgba(16, 35, 60, 0.08)",
   verticalAlign: "top",
+};
+
+const rowControlStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+};
+
+const rowActionStyle: CSSProperties = {
+  display: "flex",
+  gap: "8px",
+  alignItems: "center",
+};
+
+const actionButtonStyle: CSSProperties = {
+  display: "inline-flex",
+  justifyContent: "center",
+  alignItems: "center",
+  height: "36px",
+  padding: "0 12px",
+  borderRadius: "10px",
+  border: "none",
+  background: "#10233c",
+  color: "#f8fafc",
+  fontWeight: 600,
+  cursor: "pointer",
 };
 
 const emptyStateStyle: CSSProperties = {
@@ -167,14 +254,204 @@ const formatDateTime = (value: Date): string =>
     minute: "2-digit",
   }).format(value);
 
-export function UserManagementTable({
-  users,
-  filters,
-  summary,
-}: UserManagementTableProps) {
+export function UserManagementTable({ initialUsers, initialFilters }: UserManagementTableProps) {
+  const [records, setRecords] = useState(initialUsers);
+  const [filterDraft, setFilterDraft] = useState(initialFilters);
+  const [filters, setFilters] = useState(initialFilters);
+  const [createForm, setCreateForm] = useState(defaultCreateFormState);
+  const [roleDrafts, setRoleDrafts] = useState<Record<string, AdminUserRecord["role"]>>({});
+  const [statusDrafts, setStatusDrafts] = useState<Record<string, AdminUserRecord["status"]>>({});
+  const [notice, setNotice] = useState<NoticeState>(null);
+
+  const visibleUsers = filterAdminUserRecords(records, filters);
+  const summary = summarizeAdminUserRecords(records, visibleUsers);
+
+  const handleCreateUser = () => {
+    const result = createAdminUserRecord(records, createForm);
+
+    if (!result.ok) {
+      setNotice({
+        tone: "error",
+        title: "Create user failed",
+        message: result.message,
+      });
+      return;
+    }
+
+    setRecords(result.records);
+    setCreateForm(defaultCreateFormState);
+    setNotice({
+      tone: "success",
+      title: "User created",
+      message: result.message,
+    });
+  };
+
+  const handleRoleUpdate = (userId: string, currentRole: AdminUserRecord["role"]) => {
+    const nextRole = roleDrafts[userId] ?? currentRole;
+    const result = updateAdminUserRole(records, {
+      userId,
+      role: nextRole,
+    });
+
+    if (!result.ok) {
+      setNotice({
+        tone: "error",
+        title: "Role update failed",
+        message: result.message,
+      });
+      return;
+    }
+
+    setRecords(result.records);
+    setNotice({
+      tone: "success",
+      title: "Role updated",
+      message: result.message,
+    });
+  };
+
+  const handleStatusUpdate = (userId: string, currentStatus: AdminUserRecord["status"]) => {
+    const nextStatus = statusDrafts[userId] ?? currentStatus;
+    const result = updateAdminUserStatus(records, {
+      userId,
+      status: nextStatus,
+    });
+
+    if (!result.ok) {
+      setNotice({
+        tone: "error",
+        title: "Status update failed",
+        message: result.message,
+      });
+      return;
+    }
+
+    setRecords(result.records);
+    setNotice({
+      tone: "success",
+      title: "Status updated",
+      message: result.message,
+    });
+  };
+
   return (
-    <div style={{ display: "grid", gap: "18px" }}>
-      <form action="/admin" method="get" style={toolbarStyle}>
+    <div style={workspaceStyle}>
+      {notice ? (
+        <div role="status" aria-live="polite" style={noticeStyle(notice.tone)}>
+          <p style={{ margin: 0, fontWeight: 700, color: "#10233c" }}>{notice.title}</p>
+          <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.6 }}>{notice.message}</p>
+        </div>
+      ) : null}
+
+      <section style={createCardStyle}>
+        <div style={{ display: "grid", gap: "8px" }}>
+          <h3 style={{ margin: 0, fontSize: "1.05rem", color: "#10233c" }}>Create Or Invite User</h3>
+          <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.6 }}>
+            Add a new account to the working admin list and set the starting role before later provisioning
+            details arrive.
+          </p>
+        </div>
+
+        <div style={createGridStyle}>
+          <div style={inputGroupStyle}>
+            <label htmlFor="create-name" style={labelStyle}>
+              Full name
+            </label>
+            <input
+              id="create-name"
+              value={createForm.name}
+              onChange={(event) =>
+                setCreateForm((current) => ({
+                  ...current,
+                  name: event.target.value,
+                }))
+              }
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={inputGroupStyle}>
+            <label htmlFor="create-email" style={labelStyle}>
+              Email
+            </label>
+            <input
+              id="create-email"
+              type="email"
+              value={createForm.email}
+              onChange={(event) =>
+                setCreateForm((current) => ({
+                  ...current,
+                  email: event.target.value,
+                }))
+              }
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={inputGroupStyle}>
+            <label htmlFor="create-role" style={labelStyle}>
+              Starting role
+            </label>
+            <select
+              id="create-role"
+              value={createForm.role}
+              onChange={(event) =>
+                setCreateForm((current) => ({
+                  ...current,
+                  role: event.target.value as CreateUserFormState["role"],
+                }))
+              }
+              style={inputStyle}
+            >
+              <option value="ADMIN">Admin</option>
+              <option value="EXAMINER">Examiner</option>
+              <option value="STUDENT">Student</option>
+            </select>
+          </div>
+
+          <div style={inputGroupStyle}>
+            <label htmlFor="create-department" style={labelStyle}>
+              Department
+            </label>
+            <input
+              id="create-department"
+              value={createForm.department}
+              onChange={(event) =>
+                setCreateForm((current) => ({
+                  ...current,
+                  department: event.target.value,
+                }))
+              }
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={{ display: "flex", gap: "12px", alignItems: "end" }}>
+            <button type="button" style={buttonStyle} onClick={handleCreateUser}>
+              Create User
+            </button>
+            <button
+              type="button"
+              style={secondaryButtonStyle}
+              onClick={() => {
+                setCreateForm(defaultCreateFormState);
+                setNotice(null);
+              }}
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <form
+        style={toolbarStyle}
+        onSubmit={(event) => {
+          event.preventDefault();
+          setFilters(filterDraft);
+        }}
+      >
         <div style={toolbarGridStyle}>
           <div style={inputGroupStyle}>
             <label htmlFor="q" style={labelStyle}>
@@ -184,8 +461,14 @@ export function UserManagementTable({
               id="q"
               name="q"
               type="search"
-              defaultValue={filters.query}
+              value={filterDraft.query}
               placeholder="Search by user name or institutional email"
+              onChange={(event) =>
+                setFilterDraft((current) => ({
+                  ...current,
+                  query: event.target.value,
+                }))
+              }
               style={inputStyle}
             />
           </div>
@@ -194,7 +477,18 @@ export function UserManagementTable({
             <label htmlFor="role" style={labelStyle}>
               Role
             </label>
-            <select id="role" name="role" defaultValue={filters.role} style={inputStyle}>
+            <select
+              id="role"
+              name="role"
+              value={filterDraft.role}
+              onChange={(event) =>
+                setFilterDraft((current) => ({
+                  ...current,
+                  role: event.target.value as Required<AdminUserListFilters>["role"],
+                }))
+              }
+              style={inputStyle}
+            >
               <option value="ALL">All roles</option>
               <option value="ADMIN">Admin</option>
               <option value="EXAMINER">Examiner</option>
@@ -206,7 +500,18 @@ export function UserManagementTable({
             <label htmlFor="status" style={labelStyle}>
               Status
             </label>
-            <select id="status" name="status" defaultValue={filters.status} style={inputStyle}>
+            <select
+              id="status"
+              name="status"
+              value={filterDraft.status}
+              onChange={(event) =>
+                setFilterDraft((current) => ({
+                  ...current,
+                  status: event.target.value as Required<AdminUserListFilters>["status"],
+                }))
+              }
+              style={inputStyle}
+            >
               <option value="ALL">All statuses</option>
               <option value="ACTIVE">Active</option>
               <option value="INACTIVE">Inactive</option>
@@ -217,9 +522,16 @@ export function UserManagementTable({
             <button type="submit" style={buttonStyle}>
               Apply Filters
             </button>
-            <a href="/admin" style={secondaryLinkStyle}>
+            <button
+              type="button"
+              style={secondaryButtonStyle}
+              onClick={() => {
+                setFilterDraft(defaultFilterState);
+                setFilters(defaultFilterState);
+              }}
+            >
               Reset
-            </a>
+            </button>
           </div>
         </div>
 
@@ -243,7 +555,7 @@ export function UserManagementTable({
         </div>
       </form>
 
-      {users.length === 0 ? (
+      {visibleUsers.length === 0 ? (
         <div style={emptyStateStyle}>
           <p style={{ margin: 0, fontSize: "1.05rem", fontWeight: 700, color: "#10233c" }}>
             No users match the current filters.
@@ -266,7 +578,7 @@ export function UserManagementTable({
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
+              {visibleUsers.map((user) => (
                 <tr key={user.id}>
                   <td style={cellStyle}>
                     <div style={{ display: "grid", gap: "6px" }}>
@@ -275,34 +587,85 @@ export function UserManagementTable({
                     </div>
                   </td>
                   <td style={cellStyle}>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        padding: "7px 11px",
-                        borderRadius: "999px",
-                        fontSize: "0.85rem",
-                        fontWeight: 600,
-                        ...getRoleBadgeStyle(user.role),
-                      }}
-                    >
-                      {user.role}
-                    </span>
+                    <div style={rowControlStyle}>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          width: "fit-content",
+                          padding: "7px 11px",
+                          borderRadius: "999px",
+                          fontSize: "0.85rem",
+                          fontWeight: 600,
+                          ...getRoleBadgeStyle(user.role),
+                        }}
+                      >
+                        {user.role}
+                      </span>
+                      <div style={rowActionStyle}>
+                        <select
+                          value={roleDrafts[user.id] ?? user.role}
+                          onChange={(event) =>
+                            setRoleDrafts((current) => ({
+                              ...current,
+                              [user.id]: event.target.value as AdminUserRecord["role"],
+                            }))
+                          }
+                          style={{ ...inputStyle, height: "36px", minWidth: "132px" }}
+                        >
+                          <option value="ADMIN">Admin</option>
+                          <option value="EXAMINER">Examiner</option>
+                          <option value="STUDENT">Student</option>
+                        </select>
+                        <button
+                          type="button"
+                          style={actionButtonStyle}
+                          onClick={() => handleRoleUpdate(user.id, user.role)}
+                        >
+                          Save Role
+                        </button>
+                      </div>
+                    </div>
                   </td>
                   <td style={cellStyle}>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        padding: "7px 11px",
-                        borderRadius: "999px",
-                        fontSize: "0.85rem",
-                        fontWeight: 600,
-                        ...getStatusBadgeStyle(user.status),
-                      }}
-                    >
-                      {user.status}
-                    </span>
+                    <div style={rowControlStyle}>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          width: "fit-content",
+                          padding: "7px 11px",
+                          borderRadius: "999px",
+                          fontSize: "0.85rem",
+                          fontWeight: 600,
+                          ...getStatusBadgeStyle(user.status),
+                        }}
+                      >
+                        {user.status}
+                      </span>
+                      <div style={rowActionStyle}>
+                        <select
+                          value={statusDrafts[user.id] ?? user.status}
+                          onChange={(event) =>
+                            setStatusDrafts((current) => ({
+                              ...current,
+                              [user.id]: event.target.value as AdminUserRecord["status"],
+                            }))
+                          }
+                          style={{ ...inputStyle, height: "36px", minWidth: "132px" }}
+                        >
+                          <option value="ACTIVE">Active</option>
+                          <option value="INACTIVE">Inactive</option>
+                        </select>
+                        <button
+                          type="button"
+                          style={actionButtonStyle}
+                          onClick={() => handleStatusUpdate(user.id, user.status)}
+                        >
+                          Save Status
+                        </button>
+                      </div>
+                    </div>
                   </td>
                   <td style={cellStyle}>{user.department}</td>
                   <td style={cellStyle}>{formatDateTime(user.lastActiveAt)}</td>

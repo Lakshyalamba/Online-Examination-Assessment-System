@@ -1,9 +1,13 @@
 import type {
+  AdminCreateUserInput,
   AdminUserListFilters,
   AdminUserListSummary,
+  AdminUserMutationResult,
   AdminUserRecord,
   AdminUserRole,
   AdminUserStatus,
+  AdminUpdateUserRoleInput,
+  AdminUpdateUserStatusInput,
 } from "../domain/user-management.types.ts";
 
 export const listAdminUserRecords = (): AdminUserRecord[] => [
@@ -83,6 +87,14 @@ export const listAdminUserRecords = (): AdminUserRecord[] => [
 
 const normalizeQuery = (query?: string): string => query?.trim().toLowerCase() ?? "";
 
+const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+
+const isAdminUserRole = (value: string): value is AdminUserRole =>
+  value === "ADMIN" || value === "EXAMINER" || value === "STUDENT";
+
+const isAdminUserStatus = (value: string): value is AdminUserStatus =>
+  value === "ACTIVE" || value === "INACTIVE";
+
 const matchesQuery = (record: AdminUserRecord, query: string): boolean =>
   query.length === 0 ||
   [record.name, record.email].some((value) => value.toLowerCase().includes(query));
@@ -140,5 +152,131 @@ export const summarizeAdminUserRecords = (
     adminCount: countRole("ADMIN"),
     examinerCount: countRole("EXAMINER"),
     studentCount: countRole("STUDENT"),
+  };
+};
+
+export const createAdminUserRecord = (
+  records: readonly AdminUserRecord[],
+  input: AdminCreateUserInput,
+  now: Date = new Date(),
+): AdminUserMutationResult => {
+  const name = input.name.trim();
+  const email = normalizeEmail(input.email);
+  const department = input.department.trim();
+
+  if (name.length === 0 || email.length === 0 || department.length === 0) {
+    return {
+      ok: false,
+      code: "MISSING_FIELDS",
+      message: "Name, email, and department are required to create or invite a user.",
+    };
+  }
+
+  if (!isAdminUserRole(input.role)) {
+    return {
+      ok: false,
+      code: "INVALID_ROLE",
+      message: "Choose a valid role: Admin, Examiner, or Student.",
+    };
+  }
+
+  if (records.some((record) => normalizeEmail(record.email) === email)) {
+    return {
+      ok: false,
+      code: "DUPLICATE_EMAIL",
+      message: `A user with ${email} already exists. Use a different email address.`,
+    };
+  }
+
+  const nextRecord: AdminUserRecord = {
+    id: `user-${input.role.toLowerCase()}-${records.length + 1}`.replace(/\s+/g, "-"),
+    name,
+    email,
+    role: input.role,
+    status: "ACTIVE",
+    department,
+    lastActiveAt: now,
+  };
+
+  return {
+    ok: true,
+    records: sortUsers([...records, nextRecord]),
+    message: `${name} was created and invited as ${input.role}.`,
+  };
+};
+
+export const updateAdminUserRole = (
+  records: readonly AdminUserRecord[],
+  input: AdminUpdateUserRoleInput,
+): AdminUserMutationResult => {
+  if (!isAdminUserRole(input.role)) {
+    return {
+      ok: false,
+      code: "INVALID_ROLE",
+      message: "Choose a valid role before saving the update.",
+    };
+  }
+
+  const target = records.find((record) => record.id === input.userId);
+
+  if (!target) {
+    return {
+      ok: false,
+      code: "USER_NOT_FOUND",
+      message: "The selected user could not be found for the role update.",
+    };
+  }
+
+  return {
+    ok: true,
+    records: sortUsers(
+      records.map((record) =>
+        record.id === input.userId
+          ? {
+              ...record,
+              role: input.role,
+            }
+          : record,
+      ),
+    ),
+    message: `${target.name} is now assigned the ${input.role} role.`,
+  };
+};
+
+export const updateAdminUserStatus = (
+  records: readonly AdminUserRecord[],
+  input: AdminUpdateUserStatusInput,
+): AdminUserMutationResult => {
+  if (!isAdminUserStatus(input.status)) {
+    return {
+      ok: false,
+      code: "INVALID_STATUS",
+      message: "Choose Active or Inactive before saving the status update.",
+    };
+  }
+
+  const target = records.find((record) => record.id === input.userId);
+
+  if (!target) {
+    return {
+      ok: false,
+      code: "USER_NOT_FOUND",
+      message: "The selected user could not be found for the status update.",
+    };
+  }
+
+  return {
+    ok: true,
+    records: sortUsers(
+      records.map((record) =>
+        record.id === input.userId
+          ? {
+              ...record,
+              status: input.status,
+            }
+          : record,
+      ),
+    ),
+    message: `${target.name} is now marked ${input.status}.`,
   };
 };

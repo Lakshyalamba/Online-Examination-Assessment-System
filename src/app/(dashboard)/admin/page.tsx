@@ -2,9 +2,7 @@ import type { CSSProperties } from "react";
 
 import { UserManagementTable } from "../../../components/admin/user-management-table";
 import {
-  filterAdminUserRecords,
   listAdminUserRecords,
-  summarizeAdminUserRecords,
   type AdminUserListFilters,
   type AdminUserRole,
   type AdminUserStatus,
@@ -182,8 +180,6 @@ export default function AdminDashboardPage({ searchParams }: AdminDashboardPageP
     status: parseStatusFilter(searchParams?.status),
   };
   const allUsers = listAdminUserRecords();
-  const visibleUsers = filterAdminUserRecords(allUsers, filters);
-  const userSummary = summarizeAdminUserRecords(allUsers, visibleUsers);
 
   return (
     <div style={{ display: "grid", gap: "24px" }}>
@@ -227,12 +223,12 @@ export default function AdminDashboardPage({ searchParams }: AdminDashboardPageP
           <div style={{ display: "grid", gap: "8px" }}>
             <h2 style={sectionTitleStyle}>User Management</h2>
             <p style={{ margin: 0, color: "#4b647a", lineHeight: 1.6 }}>
-              Admins can now scan a structured user table, search by name or email, and combine role and
-              status filters without leaving the dashboard.
+              Admins can create or invite users, update role assignments, toggle active or inactive status,
+              and keep search and filters inside the same working area.
             </p>
           </div>
 
-          <UserManagementTable users={visibleUsers} filters={filters} summary={userSummary} />
+          <UserManagementTable initialUsers={allUsers} initialFilters={filters} />
         </article>
 
         <aside id="audit-activity" style={sectionCardStyle}>

@@ -29,3 +29,41 @@ export type AdminUserListSummary = {
   examinerCount: number;
   studentCount: number;
 };
+
+export type AdminCreateUserInput = {
+  name: string;
+  email: string;
+  role: string;
+  department: string;
+};
+
+export type AdminUpdateUserRoleInput = {
+  userId: string;
+  role: string;
+};
+
+export type AdminUpdateUserStatusInput = {
+  userId: string;
+  status: string;
+};
+
+export type AdminUserMutationErrorCode =
+  | "DUPLICATE_EMAIL"
+  | "INVALID_ROLE"
+  | "INVALID_STATUS"
+  | "MISSING_FIELDS"
+  | "USER_NOT_FOUND";
+
+export type AdminUserMutationSuccess = {
+  ok: true;
+  records: AdminUserRecord[];
+  message: string;
+};
+
+export type AdminUserMutationFailure = {
+  ok: false;
+  code: AdminUserMutationErrorCode;
+  message: string;
+};
+
+export type AdminUserMutationResult = AdminUserMutationSuccess | AdminUserMutationFailure;
