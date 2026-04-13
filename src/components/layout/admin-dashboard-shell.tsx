@@ -29,9 +29,9 @@ const adminNavigation = [
     description: "Dedicated listing for admin event history",
   },
   {
-    href: "/admin#reporting",
+    href: "/admin/reporting",
     label: "Reporting",
-    description: "Placeholder for analytics and reporting detail",
+    description: "KPI summaries and reporting filters",
   },
 ];
 
@@ -43,10 +43,17 @@ export function AdminDashboardShell({
 }: AdminDashboardShellProps) {
   const pathname = usePathname();
   const resolvedActiveHref = activeHref ?? pathname;
-  const resolvedPageTitle = pathname === "/admin/audit" ? "Audit Activity" : pageTitle;
+  const resolvedPageTitle =
+    pathname === "/admin/audit"
+      ? "Audit Activity"
+      : pathname === "/admin/reporting"
+        ? "Reporting"
+        : pageTitle;
   const resolvedPageDescription =
     pathname === "/admin/audit"
       ? "Review admin event history, recent operational changes, and system-facing governance actions from one dedicated audit page."
+      : pathname === "/admin/reporting"
+        ? "Review KPI summaries, exam-level reporting filters, and analytics-ready admin reporting signals from one dedicated page."
       : pageDescription;
 
   return (
