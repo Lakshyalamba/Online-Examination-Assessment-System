@@ -64,6 +64,9 @@ const formatDraftInputDateTime = (value: string) => {
 const getSavedExamDetailHref = (examId: string) =>
   `./detail.html?examId=${encodeURIComponent(examId)}`;
 
+const getSavedExamEditHref = (examId: string) =>
+  `./edit.html?examId=${encodeURIComponent(examId)}`;
+
 const getDraftWindowMinutes = (draft: DraftExamAuthoringDraft) => {
   if (draft.windowStartsAt.trim() === "" || draft.windowEndsAt.trim() === "") {
     return null;
@@ -991,6 +994,12 @@ const renderLastSavedDraftPanel = ({
             <div class="exam-authoring-actions__buttons">
               <a
                 class="question-bank-button question-bank-button--secondary"
+                href="${getSavedExamEditHref(lastSavedExam.examId)}"
+              >
+                Edit saved exam
+              </a>
+              <a
+                class="question-bank-button question-bank-button--secondary"
                 href="${getSavedExamDetailHref(lastSavedExam.examId)}"
               >
                 View exam detail
@@ -1079,12 +1088,40 @@ const renderActionPanel = ({
   </section>
 `;
 
+export const renderDraftExamAuthoringNotFoundPage = (
+  requestedExamId: string | null,
+) =>
+  renderExaminerWorkspaceShell({
+    title: "Saved exam not found",
+    description:
+      "The requested exam could not be loaded into the authoring workspace.",
+    sidebarLabel: "Exam edit workspace",
+    sidebarDescription:
+      "Open a saved exam detail record or start a new draft if the original record is no longer available.",
+    headerActions: `
+      <a class="question-bank-button question-bank-button--secondary" href="./create.html">
+        Create new draft
+      </a>
+      <a class="question-bank-button question-bank-button--secondary" href="./detail.html">
+        Open exam detail
+      </a>
+    `,
+    mainContent: `
+      <section class="question-bank-panel question-bank-empty-state">
+        <div class="question-bank-empty-state__badge">?</div>
+        <h3>No editable record for ${escapeHtml(requestedExamId ?? "this exam")}</h3>
+        <p>Open a saved exam from the detail view or save a fresh draft before trying to edit it here.</p>
+      </section>
+    `,
+  });
+
 export const renderCreateDraftExamPage = ({
   activeSectionId,
   assignmentCandidates,
   draft,
   errors,
   lastSavedExam,
+  mode,
   questionBankEntries,
   status,
 }: {
@@ -1093,25 +1130,45 @@ export const renderCreateDraftExamPage = ({
   draft: DraftExamAuthoringDraft;
   errors: DraftExamAuthoringFormErrors;
   lastSavedExam: DraftExamSummary | null;
+  mode: "create" | "edit";
   questionBankEntries: QuestionBankEntry[];
   status:
     | { tone: "success"; title: string; detail: string }
     | { tone: "error"; title: string; detail: string }
     | null;
 }) => {
+  const isEditing = mode === "edit";
   const readiness = getDraftExamPublishReadiness(draft);
 
   return renderExaminerWorkspaceShell({
-    title: "Create Draft Exam",
-    description:
-      "Capture metadata, organize sections, assign students, and keep publish readiness visible while the exam moves from draft to scheduled availability.",
-    sidebarLabel: "Exam draft workspace",
-    sidebarDescription:
-      "Metadata, mapped questions, assignments, and publish readiness stay aligned here before the exam reaches students.",
+    title: isEditing ? "Edit Saved Exam" : "Create Draft Exam",
+    description: isEditing
+      ? "Reload a saved exam, update metadata, reorder mapped questions, and keep publish readiness visible while changes stay in sync."
+      : "Capture metadata, organize sections, assign students, and keep publish readiness visible while the exam moves from draft to scheduled availability.",
+    sidebarLabel: isEditing ? "Exam edit workspace" : "Exam draft workspace",
+    sidebarDescription: isEditing
+      ? "Saved authoring records can be revised here without losing the publish-readiness cues or frozen question snapshots."
+      : "Metadata, mapped questions, assignments, and publish readiness stay aligned here before the exam reaches students.",
     headerActions: `
       <a class="question-bank-button question-bank-button--secondary" href="../question-bank/index.html">
         Open question bank
       </a>
+      ${
+        isEditing
+          ? `<a class="question-bank-button question-bank-button--secondary" href="./create.html">
+              Create new draft
+            </a>`
+          : ""
+      }
+      ${
+        lastSavedExam && !isEditing
+          ? `<a class="question-bank-button question-bank-button--secondary" href="${getSavedExamEditHref(
+              lastSavedExam.examId,
+            )}">
+              Edit saved exam
+            </a>`
+          : ""
+      }
       ${
         lastSavedExam
           ? `<a class="question-bank-button question-bank-button--secondary" href="${getSavedExamDetailHref(

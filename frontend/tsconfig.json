@@ -10,6 +10,7 @@
     "allowJs": false,
     "skipLibCheck": true,
     "strict": true,
+    "ignoreDeprecations": "6.0",
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
@@ -24,6 +25,30 @@
       }
     ],
     "paths": {
+      "next": [
+        "./node_modules/next"
+      ],
+      "next/*": [
+        "./node_modules/next/*"
+      ],
+      "next-auth": [
+        "./node_modules/next-auth"
+      ],
+      "next-auth/*": [
+        "./node_modules/next-auth/*"
+      ],
+      "react": [
+        "./node_modules/@types/react/index.d.ts"
+      ],
+      "react/jsx-runtime": [
+        "./node_modules/@types/react/jsx-runtime.d.ts"
+      ],
+      "react/jsx-dev-runtime": [
+        "./node_modules/@types/react/jsx-dev-runtime.d.ts"
+      ],
+      "react-dom": [
+        "./node_modules/@types/react-dom/index.d.ts"
+      ],
       "@oeas/backend/*": [
         "../backend/src/*"
       ],

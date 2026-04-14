@@ -59,8 +59,15 @@ const writeStoredExamSummaryMap = (
   );
 };
 
-export const persistDraftExamSummary = (summary: DraftExamSummary) => {
+export const persistDraftExamSummary = (
+  summary: DraftExamSummary,
+  previousExamId: string | null = null,
+) => {
   const storedMap = readStoredExamSummaryMap();
+
+  if (previousExamId && previousExamId !== summary.examId) {
+    delete storedMap[previousExamId];
+  }
 
   storedMap[summary.examId] = serializeDraftExamSummary(summary);
   writeStoredExamSummaryMap(storedMap);

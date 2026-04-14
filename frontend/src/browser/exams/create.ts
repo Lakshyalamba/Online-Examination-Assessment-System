@@ -5,9 +5,11 @@ import {
   addQuestionToDraftExamSection,
   addStudentAssignmentToDraftExam,
   createDraftExamAuthoringDraft,
+  createDraftExamAuthoringDraftFromSummary,
   createDraftExamSummary,
   createEmptyDraftExamFormErrors,
   findExamAssignmentCandidate,
+  findExamDetailDemoRecordById,
   moveDraftExamQuestion,
   moveDraftExamSection,
   normalizeDraftExamAuthoringDraft,
@@ -23,8 +25,14 @@ import {
   validateDraftExamAuthoringDraft,
 } from "../../modules/exams/index";
 import { QUESTION_BANK_SAMPLE_ENTRIES } from "../../modules/questions/index";
-import { renderCreateDraftExamPage } from "../../modules/exams/create-exam/ui/create-draft-exam-page";
-import { persistDraftExamSummary } from "./exam-summary-storage";
+import {
+  renderCreateDraftExamPage,
+  renderDraftExamAuthoringNotFoundPage,
+} from "../../modules/exams/create-exam/ui/create-draft-exam-page";
+import {
+  persistDraftExamSummary,
+  readPersistedDraftExamSummary,
+} from "./exam-summary-storage";
 
 const root = document.querySelector<HTMLElement>("[data-create-exam-root]");
 
@@ -33,6 +41,7 @@ if (!root) {
 }
 
 const query = new URLSearchParams(window.location.search);
+const authoringMode = root.dataset.mode === "edit" ? "edit" : "create";
 
 type DraftExamFieldKey = keyof Omit<
   DraftExamAuthoringDraft,
@@ -88,19 +97,72 @@ const getDraftWithQueryOverrides = (draft: DraftExamAuthoringDraft) => {
   return nextDraft;
 };
 
-const getInitialDraft = () => {
+interface InitialExamAuthoringContext {
+  draft: DraftExamAuthoringDraft;
+  lastSavedExam: DraftExamSummary | null;
+  notFound: boolean;
+  persistedExamId: string | null;
+  requestedExamId: string | null;
+}
+
+const getSavedExamSummary = (examId: string) =>
+  readPersistedDraftExamSummary(examId) ??
+  findExamDetailDemoRecordById(examId)?.exam ??
+  null;
+
+const getInitialExamAuthoringContext = (): InitialExamAuthoringContext => {
+  const requestedExamId = query.get("examId");
   const scenario = query.get("scenario");
 
-  if (scenario && DRAFT_EXAM_AUTHORING_SCENARIOS[scenario]) {
-    return getDraftWithQueryOverrides(
-      structuredClone(DRAFT_EXAM_AUTHORING_SCENARIOS[scenario]),
-    );
+  if (requestedExamId) {
+    const loadedSummary = getSavedExamSummary(requestedExamId);
+
+    if (loadedSummary) {
+      return {
+        draft: getDraftWithQueryOverrides(
+          createDraftExamAuthoringDraftFromSummary(loadedSummary),
+        ),
+        lastSavedExam: loadedSummary,
+        notFound: false,
+        persistedExamId: loadedSummary.examId,
+        requestedExamId,
+      };
+    }
+
+    if (authoringMode === "edit") {
+      return {
+        draft: getDraftWithQueryOverrides(createDraftExamAuthoringDraft()),
+        lastSavedExam: null,
+        notFound: true,
+        persistedExamId: null,
+        requestedExamId,
+      };
+    }
   }
 
-  return getDraftWithQueryOverrides(createDraftExamAuthoringDraft());
+  if (scenario && DRAFT_EXAM_AUTHORING_SCENARIOS[scenario]) {
+    return {
+      draft: getDraftWithQueryOverrides(
+        structuredClone(DRAFT_EXAM_AUTHORING_SCENARIOS[scenario]),
+      ),
+      lastSavedExam: null,
+      notFound: false,
+      persistedExamId: null,
+      requestedExamId,
+    };
+  }
+
+  return {
+    draft: getDraftWithQueryOverrides(createDraftExamAuthoringDraft()),
+    lastSavedExam: null,
+    notFound: authoringMode === "edit",
+    persistedExamId: null,
+    requestedExamId,
+  };
 };
 
-const initialDraft = getInitialDraft();
+const initialContext = getInitialExamAuthoringContext();
+const initialDraft = initialContext.draft;
 
 const state: {
   activeSectionId: string | null;
@@ -108,6 +170,7 @@ const state: {
   baseDraft: DraftExamAuthoringDraft;
   errors: ReturnType<typeof createEmptyDraftExamFormErrors>;
   lastSavedExam: DraftExamSummary | null;
+  persistedExamId: string | null;
   status:
     | { tone: "success"; title: string; detail: string }
     | { tone: "error"; title: string; detail: string }
@@ -117,7 +180,8 @@ const state: {
   draft: structuredClone(initialDraft),
   baseDraft: structuredClone(initialDraft),
   errors: createEmptyDraftExamFormErrors(),
-  lastSavedExam: null,
+  lastSavedExam: initialContext.lastSavedExam,
+  persistedExamId: initialContext.persistedExamId,
   status: null,
 };
 
@@ -195,6 +259,7 @@ const render = (focusSnapshot: ReturnType<typeof captureFocus> = null) => {
     draft: state.draft,
     errors: state.errors,
     lastSavedExam: state.lastSavedExam,
+    mode: authoringMode,
     questionBankEntries: QUESTION_BANK_SAMPLE_ENTRIES,
     status: state.status,
   });
@@ -236,11 +301,20 @@ const submitDraft = () => {
     state.draft,
     state.activeSectionId,
   );
+  const wasEditingExistingExam =
+    state.persistedExamId !== null || authoringMode === "edit";
   state.lastSavedExam = createDraftExamSummary(result.data);
-  persistDraftExamSummary(state.lastSavedExam);
+  persistDraftExamSummary(state.lastSavedExam, state.persistedExamId);
+  state.persistedExamId = state.lastSavedExam.examId;
   state.status = {
     tone: "success",
-    title: state.draft.status === "SCHEDULED" ? "Scheduled exam saved" : "Draft exam saved",
+    title: wasEditingExistingExam
+        ? state.draft.status === "SCHEDULED"
+          ? "Scheduled exam updated"
+          : "Exam changes saved"
+        : state.draft.status === "SCHEDULED"
+          ? "Scheduled exam saved"
+          : "Draft exam saved",
     detail:
       "Metadata, mapped question snapshots, and student assignments passed validation and were stored in the exam workspace.",
   };
@@ -269,11 +343,14 @@ const publishExam = () => {
     state.draft,
     state.activeSectionId,
   );
+  const wasEditingExistingExam =
+    state.persistedExamId !== null || authoringMode === "edit";
   state.lastSavedExam = createDraftExamSummary(result.data);
-  persistDraftExamSummary(state.lastSavedExam);
+  persistDraftExamSummary(state.lastSavedExam, state.persistedExamId);
+  state.persistedExamId = state.lastSavedExam.examId;
   state.status = {
     tone: "success",
-    title: "Exam scheduled",
+    title: wasEditingExistingExam ? "Scheduled exam updated" : "Exam scheduled",
     detail:
       "Questions, schedule, and assignments passed the publish gate, so the exam is now marked as scheduled.",
   };
@@ -487,12 +564,18 @@ root.addEventListener("click", (event) => {
   }
 });
 
-render();
+if (initialContext.notFound) {
+  root.innerHTML = renderDraftExamAuthoringNotFoundPage(
+    initialContext.requestedExamId,
+  );
+} else {
+  render();
 
-if (query.get("submit") === "1") {
-  submitDraft();
-}
+  if (query.get("submit") === "1") {
+    submitDraft();
+  }
 
-if (query.get("publish") === "1") {
-  publishExam();
+  if (query.get("publish") === "1") {
+    publishExam();
+  }
 }

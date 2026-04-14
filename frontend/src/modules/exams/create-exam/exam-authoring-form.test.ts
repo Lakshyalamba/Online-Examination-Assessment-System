@@ -8,6 +8,7 @@ import {
   addDraftExamSection,
   addStudentAssignmentToDraftExam,
   addQuestionToDraftExamSection,
+  createDraftExamAuthoringDraftFromSummary,
   createDraftExamAuthoringDraft,
   createDraftExamSummary,
   getDraftExamAssignedStudentCount,
@@ -157,6 +158,23 @@ test("draft exam summaries keep normalized metadata and derived window length", 
     "Line one",
     "Line two",
   ]);
+});
+
+test("saved exam summaries can be reloaded into edit mode without losing structure", () => {
+  const draftRecord = findExamDetailDemoRecordByScenario("builder-success");
+
+  if (!draftRecord) {
+    throw new Error("Expected builder-success demo record");
+  }
+
+  const editableDraft = createDraftExamAuthoringDraftFromSummary(draftRecord.exam);
+
+  assert.equal(editableDraft.title, draftRecord.exam.title);
+  assert.equal(editableDraft.code, draftRecord.exam.code);
+  assert.equal(editableDraft.status, "DRAFT");
+  assert.equal(editableDraft.sections.length, 2);
+  assert.equal(editableDraft.sections[0]?.questions[0]?.marks, "5");
+  assert.equal(editableDraft.assignments.length, 2);
 });
 
 test("sections can be added, renamed, and reordered with stable sectionOrder values", () => {
@@ -443,7 +461,7 @@ test("detail demo records expose authored draft and scheduled exams", () => {
   const scheduledRecord = findExamDetailDemoRecordByScenario("publish-ready");
 
   assert.equal(draftRecord?.exam.status, "DRAFT");
-  assert.equal(getDraftExamMappedQuestionCount(draftRecord?.exam ?? { sections: [] }), 4);
+  assert.equal(getDraftExamMappedQuestionCount(draftRecord?.exam ?? { sections: [] }), 3);
   assert.equal(scheduledRecord?.exam.status, "SCHEDULED");
   assert.equal(getDraftExamAssignedStudentCount(scheduledRecord?.exam ?? { assignments: [] }), 2);
 });

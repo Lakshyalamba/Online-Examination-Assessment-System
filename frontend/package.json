@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "build:browser": "node scripts/build-browser.mjs",
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint .",
-    "test": "npm run lint && npm run build"
+    "lint": "eslint src scripts next.config.ts",
+    "typecheck": "mkdir -p .next/types && next typegen && tsc -p tsconfig.json --noEmit",
+    "test:contracts": "node --import tsx --test src/modules/questions/validation/question.schemas.test.ts src/modules/questions/question-bank/question-bank-listing.test.ts src/modules/questions/create-question/objective-question-form.test.ts src/modules/questions/create-question/question-authoring-form.test.ts src/modules/exams/create-exam/exam-authoring-form.test.ts",
+    "test": "npm run lint && npm run typecheck && npm run test:contracts && npm run build:browser && npm run build"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -21,8 +24,10 @@
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "esbuild": "^0.25.12",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.3",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.2"
   }
 }

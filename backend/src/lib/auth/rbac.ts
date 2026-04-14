@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import type { Session } from "next-auth";
 
 import { auth } from "../../auth";
 import { routes } from "../routes";
@@ -28,16 +29,22 @@ export function buildUnauthorizedRedirect(role: AppRole, from: string) {
   return `${getDashboardRouteForRole(role)}?${searchParams.toString()}`;
 }
 
+export type AuthenticatedSession = Session & {
+  user: NonNullable<Session["user"]> & {
+    role: AppRole;
+  };
+};
+
 export async function requireAuthenticatedSession(
   callbackUrl: string = routes.dashboard,
-) {
+): Promise<AuthenticatedSession> {
   const session = await auth();
 
   if (!session?.user) {
     redirect(buildLoginRedirect(callbackUrl));
   }
 
-  return session;
+  return session as AuthenticatedSession;
 }
 
 export async function requireRole(role: AppRole, pathname: string) {

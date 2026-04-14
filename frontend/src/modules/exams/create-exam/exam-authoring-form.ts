@@ -950,6 +950,38 @@ export const createDraftExamSummary = (
   ...values,
 });
 
+export const createDraftExamAuthoringDraftFromSummary = (
+  summary: DraftExamSummary,
+): DraftExamAuthoringDraft => ({
+  title: summary.title,
+  code: summary.code,
+  instructionsText: summary.instructions.join("\n"),
+  durationMinutes: String(summary.durationMinutes),
+  windowStartsAt: toDateTimeLocalValue(summary.windowStartsAt),
+  windowEndsAt: toDateTimeLocalValue(summary.windowEndsAt),
+  sections: summary.sections.map((section) => ({
+    sectionId: section.sectionId,
+    title: section.title,
+    sectionOrder: section.sectionOrder,
+    questions: section.questions.map((question) => ({
+      examQuestionId: question.examQuestionId,
+      questionOrder: question.questionOrder,
+      marks: String(question.marks),
+      snapshot: question.snapshot,
+    })),
+  })),
+  assignments: summary.assignments.map((assignment) => ({
+    assignmentId: assignment.assignmentId,
+    studentId: assignment.studentId,
+    studentName: assignment.studentName,
+    studentEmail: assignment.studentEmail,
+    department: assignment.department,
+    studentRole: assignment.studentRole,
+    studentStatus: assignment.studentStatus,
+  })),
+  status: summary.status,
+});
+
 export const getDraftExamWindowDurationMinutes = ({
   windowEndsAt,
   windowStartsAt,

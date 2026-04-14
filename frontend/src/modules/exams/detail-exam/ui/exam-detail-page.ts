@@ -494,6 +494,9 @@ const renderExamDetailHero = ({
   </section>
 `;
 
+const getExamEditHref = (examId: string) =>
+  `./edit.html?examId=${encodeURIComponent(examId)}`;
+
 export const renderExamDetailPage = ({
   activeTab,
   demoRecords,
@@ -515,6 +518,15 @@ export const renderExamDetailPage = ({
     sidebarDescription:
       "This read-only surface turns the authored exam into a stable reference for later delivery, review, and result flows.",
     headerActions: `
+      ${
+        exam
+          ? `<a class="question-bank-button question-bank-button--secondary" href="${getExamEditHref(
+              exam.examId,
+            )}">
+              Edit exam
+            </a>`
+          : ""
+      }
       <a class="question-bank-button question-bank-button--secondary" href="./create.html">
         Open exam builder
       </a>

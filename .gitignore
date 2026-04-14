@@ -15,3 +15,5 @@ pnpm-debug.log*
 .playwright-mcp
 .playwright-cli/
 dist/
+output/
+*.tsbuildinfo
