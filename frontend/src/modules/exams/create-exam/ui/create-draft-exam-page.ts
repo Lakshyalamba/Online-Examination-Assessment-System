@@ -11,6 +11,10 @@ import type {
   DraftExamSummary,
   ExamAssignmentCandidate,
 } from "../../domain/exam.types";
+import {
+  renderExamStatusChip,
+  renderExaminerWorkspaceShell,
+} from "../../ui/exam-ui.shared";
 import type {
   DraftExamAssignmentAuthoringDraft,
   DraftExamAuthoringDraft,
@@ -45,61 +49,6 @@ const renderErrorMessages = (messages?: string[]) => {
 const toDifficultyTone = (difficulty: QuestionBankEntry["difficulty"]) =>
   difficulty.toLowerCase() as "easy" | "medium" | "hard";
 
-const getStatusToneClass = (status: DraftExamAuthoringDraft["status"]) =>
-  status === "SCHEDULED" ? "exam-authoring-chip--scheduled" : "exam-authoring-chip--draft";
-
-const renderExamAuthoringShell = ({
-  description,
-  headerActions = "",
-  mainContent,
-  title,
-}: {
-  description: string;
-  headerActions?: string;
-  mainContent: string;
-  title: string;
-}) => `
-  <div class="question-bank-shell">
-    <aside class="question-bank-shell__sidebar" aria-label="Examiner navigation">
-      <div class="question-bank-brand">
-        <span class="question-bank-brand__mark">OE</span>
-        <div>
-          <p>Online Examination</p>
-          <p>Assessment System</p>
-        </div>
-      </div>
-      <nav class="question-bank-nav">
-        <a href="#" class="question-bank-nav__item">Dashboard</a>
-        <a href="./create.html" class="question-bank-nav__item is-active" aria-current="page">Exams</a>
-        <a href="../question-bank/index.html" class="question-bank-nav__item">Question Bank</a>
-        <a href="#" class="question-bank-nav__item">Review Queue</a>
-        <a href="#" class="question-bank-nav__item">Analytics</a>
-      </nav>
-      <div class="question-bank-sidebar__footer">
-        <p>Exam draft workspace</p>
-        <p>Metadata, mapped questions, assignments, and publish readiness stay aligned here before the exam reaches students.</p>
-      </div>
-    </aside>
-    <main class="question-bank-shell__main">
-      <header class="question-bank-page-header">
-        <div class="question-bank-page-header__top">
-          <div class="question-bank-page-header__copy">
-            <p class="question-bank-page-header__eyebrow">Examiner Authoring</p>
-            <h1>${escapeHtml(title)}</h1>
-            <p>${escapeHtml(description)}</p>
-          </div>
-          ${
-            headerActions === ""
-              ? ""
-              : `<div class="question-bank-page-header__actions">${headerActions}</div>`
-          }
-        </div>
-      </header>
-      ${mainContent}
-    </main>
-  </div>
-`;
-
 const formatDraftInputDateTime = (value: string) => {
   if (value.trim() === "") {
     return "Not scheduled";
@@ -111,6 +60,9 @@ const formatDraftInputDateTime = (value: string) => {
     ? "Invalid date"
     : formatDraftExamDateTime(parsed);
 };
+
+const getSavedExamDetailHref = (examId: string) =>
+  `./detail.html?examId=${encodeURIComponent(examId)}`;
 
 const getDraftWindowMinutes = (draft: DraftExamAuthoringDraft) => {
   if (draft.windowStartsAt.trim() === "" || draft.windowEndsAt.trim() === "") {
@@ -915,9 +867,7 @@ const renderLiveSummary = ({
     <section class="question-bank-panel exam-authoring-summary">
       <p class="exam-authoring-panel__eyebrow">Live Summary</p>
       <div class="exam-authoring-summary__chips">
-        <span class="exam-authoring-chip ${getStatusToneClass(draft.status)}">${escapeHtml(
-          draft.status,
-        )}</span>
+        ${renderExamStatusChip(draft.status)}
         <span class="exam-authoring-chip exam-authoring-chip--code">${
           escapeHtml(draft.code || "Exam code")
         }</span>
@@ -984,14 +934,12 @@ const renderReadinessPanel = ({
   readiness: DraftExamPublishReadiness;
 }) => `
   <section class="question-bank-panel exam-authoring-summary exam-readiness">
-    <div class="exam-authoring-panel__heading">
-      <div>
-        <p class="exam-authoring-panel__eyebrow">Publish Readiness</p>
-        <h3>${readiness.isReady ? "Ready to schedule" : "Blocked"}</h3>
-      </div>
-      <span class="exam-authoring-chip ${getStatusToneClass(draft.status)}">${escapeHtml(
-        draft.status,
-      )}</span>
+      <div class="exam-authoring-panel__heading">
+        <div>
+          <p class="exam-authoring-panel__eyebrow">Publish Readiness</p>
+          <h3>${readiness.isReady ? "Ready to schedule" : "Blocked"}</h3>
+        </div>
+      ${renderExamStatusChip(draft.status)}
     </div>
     <p class="exam-authoring-summary__window">${
       readiness.isReady
@@ -1031,9 +979,7 @@ const renderLastSavedDraftPanel = ({
       lastSavedExam
         ? `
             <div class="exam-authoring-summary__chips">
-              <span class="exam-authoring-chip ${getStatusToneClass(lastSavedExam.status)}">${escapeHtml(
-                lastSavedExam.status,
-              )}</span>
+              ${renderExamStatusChip(lastSavedExam.status)}
               <span class="exam-authoring-chip exam-authoring-chip--code">${escapeHtml(
                 lastSavedExam.code,
               )}</span>
@@ -1042,6 +988,14 @@ const renderLastSavedDraftPanel = ({
             <p class="exam-authoring-summary__saved-code">${escapeHtml(
               lastSavedExam.examId,
             )}</p>
+            <div class="exam-authoring-actions__buttons">
+              <a
+                class="question-bank-button question-bank-button--secondary"
+                href="${getSavedExamDetailHref(lastSavedExam.examId)}"
+              >
+                View exam detail
+              </a>
+            </div>
             <dl class="exam-authoring-summary__stats">
               <div>
                 <dt>Window length</dt>
@@ -1147,14 +1101,26 @@ export const renderCreateDraftExamPage = ({
 }) => {
   const readiness = getDraftExamPublishReadiness(draft);
 
-  return renderExamAuthoringShell({
+  return renderExaminerWorkspaceShell({
     title: "Create Draft Exam",
     description:
       "Capture metadata, organize sections, assign students, and keep publish readiness visible while the exam moves from draft to scheduled availability.",
+    sidebarLabel: "Exam draft workspace",
+    sidebarDescription:
+      "Metadata, mapped questions, assignments, and publish readiness stay aligned here before the exam reaches students.",
     headerActions: `
       <a class="question-bank-button question-bank-button--secondary" href="../question-bank/index.html">
         Open question bank
       </a>
+      ${
+        lastSavedExam
+          ? `<a class="question-bank-button question-bank-button--secondary" href="${getSavedExamDetailHref(
+              lastSavedExam.examId,
+            )}">
+              View saved detail
+            </a>`
+          : ""
+      }
     `,
     mainContent: `
       ${renderStatusBanner({ errors, status })}

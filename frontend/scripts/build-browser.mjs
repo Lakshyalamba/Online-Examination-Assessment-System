@@ -16,6 +16,10 @@ const browserEntries = [
     entry: resolve("src/browser/exams/create.ts"),
     outfile: resolve("dist/browser-bundles/exams/create.js"),
   },
+  {
+    entry: resolve("src/browser/exams/detail.ts"),
+    outfile: resolve("dist/browser-bundles/exams/detail.js"),
+  },
 ];
 
 await Promise.all(

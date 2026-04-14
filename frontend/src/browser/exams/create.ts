@@ -24,6 +24,7 @@ import {
 } from "../../modules/exams/index";
 import { QUESTION_BANK_SAMPLE_ENTRIES } from "../../modules/questions/index";
 import { renderCreateDraftExamPage } from "../../modules/exams/create-exam/ui/create-draft-exam-page";
+import { persistDraftExamSummary } from "./exam-summary-storage";
 
 const root = document.querySelector<HTMLElement>("[data-create-exam-root]");
 
@@ -236,6 +237,7 @@ const submitDraft = () => {
     state.activeSectionId,
   );
   state.lastSavedExam = createDraftExamSummary(result.data);
+  persistDraftExamSummary(state.lastSavedExam);
   state.status = {
     tone: "success",
     title: state.draft.status === "SCHEDULED" ? "Scheduled exam saved" : "Draft exam saved",
@@ -268,6 +270,7 @@ const publishExam = () => {
     state.activeSectionId,
   );
   state.lastSavedExam = createDraftExamSummary(result.data);
+  persistDraftExamSummary(state.lastSavedExam);
   state.status = {
     tone: "success",
     title: "Exam scheduled",

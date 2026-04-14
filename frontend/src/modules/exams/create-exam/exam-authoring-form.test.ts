@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { findExamDetailDemoRecordByScenario } from "../detail-exam/exam-detail.records";
 import { QUESTION_BANK_SAMPLE_ENTRIES } from "../../questions/question-bank/question-bank.data.js";
 import { findExamAssignmentCandidate } from "./exam-assignment-candidates.js";
 import {
@@ -435,4 +436,14 @@ test("publish readiness requires mapped questions and active student assignments
 
   assert.equal(publishResult.readiness.isReady, true);
   assert.equal(publishResult.data.status, "SCHEDULED");
+});
+
+test("detail demo records expose authored draft and scheduled exams", () => {
+  const draftRecord = findExamDetailDemoRecordByScenario("builder-success");
+  const scheduledRecord = findExamDetailDemoRecordByScenario("publish-ready");
+
+  assert.equal(draftRecord?.exam.status, "DRAFT");
+  assert.equal(getDraftExamMappedQuestionCount(draftRecord?.exam ?? { sections: [] }), 4);
+  assert.equal(scheduledRecord?.exam.status, "SCHEDULED");
+  assert.equal(getDraftExamAssignedStudentCount(scheduledRecord?.exam ?? { assignments: [] }), 2);
 });
