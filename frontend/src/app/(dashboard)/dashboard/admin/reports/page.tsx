@@ -8,7 +8,6 @@ export default function AdminReportsPage() {
   return (
     <DashboardModuleScaffold
       backHref={routes.adminDashboard}
-      description={page.description}
       nextSteps={[
         "Operational reporting now has a dedicated Admin destination instead of being folded into overview-only cards.",
         "Feature owners can build reporting panels here without creating a second dashboard shell or route convention.",

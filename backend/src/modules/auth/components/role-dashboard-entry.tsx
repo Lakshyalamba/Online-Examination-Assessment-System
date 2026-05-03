@@ -20,7 +20,6 @@ type RoleDashboardAction = {
 type RoleDashboardEntryProps = {
   role: AppRole;
   title: string;
-  description: string;
   metrics: RoleDashboardMetric[];
   actions: RoleDashboardAction[];
   focusTitle: string;
@@ -34,7 +33,6 @@ type RoleDashboardEntryProps = {
 export function RoleDashboardEntry({
   role,
   title,
-  description,
   metrics,
   actions,
   focusTitle,
@@ -71,7 +69,6 @@ export function RoleDashboardEntry({
               ))}
             </PageToolbar>
           }
-          description={description}
           eyebrow={`${role} workspace`}
           title={title}
           tone="inverse"
@@ -118,9 +115,6 @@ export function RoleDashboardEntry({
               >
                 <span className="role-dashboard-entry__link-title">
                   {link.label}
-                </span>
-                <span className="role-dashboard-entry__link-description">
-                  {link.description}
                 </span>
               </Link>
             ))}

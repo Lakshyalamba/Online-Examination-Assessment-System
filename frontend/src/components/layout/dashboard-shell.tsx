@@ -14,7 +14,7 @@ import { getDashboardNavigation } from "@/lib/dashboard-navigation";
 export type DashboardNavigationItem = {
   href: string;
   label: string;
-  description: string;
+  description?: string;
   isActive?: boolean;
 };
 
@@ -27,7 +27,7 @@ type DashboardShellProps = {
 type StaticDashboardShellProps = {
   roleLabel: string;
   pageTitle: string;
-  pageDescription: string;
+  pageDescription?: string;
   navigation: DashboardNavigationItem[];
   children: ReactNode;
 };
@@ -156,7 +156,6 @@ export function DashboardShell({
               {navigation.shellEyebrow}
             </p>
             <h1>{navigation.shellTitle}</h1>
-            <p>{navigation.shellDescription}</p>
           </div>
 
           <div className="dashboard-shell__identity">
@@ -224,9 +223,6 @@ export function StaticDashboardShell({
                   aria-current={item.isActive ? "location" : undefined}
                 >
                   <span style={{ fontWeight: 600 }}>{item.label}</span>
-                  <span style={{ fontSize: "0.925rem", color: "rgba(244, 248, 252, 0.72)" }}>
-                    {item.description}
-                  </span>
                 </a>
               </li>
             ))}

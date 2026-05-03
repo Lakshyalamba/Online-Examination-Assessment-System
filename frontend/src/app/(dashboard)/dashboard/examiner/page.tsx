@@ -23,7 +23,6 @@ export default async function ExaminerDashboardPage({
     <RoleDashboardEntry
       role="EXAMINER"
       title="Assessment authoring overview"
-      description="Give Examiner users a clear launch point for question authoring, exam management, grading, and analytics without competing dashboard patterns."
       actions={[
         {
           label: "Open question bank",

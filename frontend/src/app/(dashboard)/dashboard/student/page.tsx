@@ -23,7 +23,6 @@ export default async function StudentDashboardPage({
     <RoleDashboardEntry
       role="STUDENT"
       title="Student action overview"
-      description="Keep the next exam, result visibility, and profile readiness easy to scan so students always know the safest next step."
       actions={[
         {
           label: "View exams",

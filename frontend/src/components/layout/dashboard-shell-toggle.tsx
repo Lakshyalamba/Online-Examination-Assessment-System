@@ -76,7 +76,6 @@ export function DashboardShellToggle({
                   </button>
                 }
                 className="dashboard-shell__mobile-header"
-                description={navigation.shellDescription}
                 eyebrow={navigation.shellEyebrow}
                 title={navigation.shellTitle}
                 tone="inverse"
@@ -87,7 +86,6 @@ export function DashboardShellToggle({
                   {navigation.shellEyebrow}
                 </p>
                 <h1>{navigation.shellTitle}</h1>
-                <p>{navigation.shellDescription}</p>
               </div>
 
               <div className="dashboard-shell__identity">

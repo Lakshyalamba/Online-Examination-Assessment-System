@@ -8,7 +8,6 @@ export default function StudentResultsPage() {
   return (
     <DashboardModuleScaffold
       backHref={routes.studentDashboard}
-      description={page.description}
       nextSteps={[
         "Student result summaries and detail views can now attach to this route without inventing a second shell.",
         "The shared Student navigation keeps results distinct from active exam participation.",

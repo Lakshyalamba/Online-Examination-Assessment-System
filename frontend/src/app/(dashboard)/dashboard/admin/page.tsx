@@ -23,7 +23,6 @@ export default async function AdminDashboardPage({
     <RoleDashboardEntry
       role="ADMIN"
       title="Governance overview"
-      description="Give Admin users one calm operational summary surface before deeper user, audit, and reporting workflows take over."
       actions={[
         {
           label: "Manage users",

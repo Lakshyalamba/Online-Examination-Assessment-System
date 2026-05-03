@@ -8,7 +8,6 @@ export default function AdminAuditPage() {
   return (
     <DashboardModuleScaffold
       backHref={routes.adminDashboard}
-      description={page.description}
       nextSteps={[
         "Audit features can now target this stable Admin route without changing dashboard structure or access checks.",
         "Top-level breadcrumbs and active navigation are already wired for deeper Admin oversight pages.",

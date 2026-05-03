@@ -8,7 +8,6 @@ export default function StudentProfilePage() {
   return (
     <DashboardModuleScaffold
       backHref={routes.studentDashboard}
-      description={page.description}
       nextSteps={[
         "Student profile and readiness details now have a stable destination inside the shared shell.",
         "Future work can add account details and exam-readiness signals here without rewriting navigation.",

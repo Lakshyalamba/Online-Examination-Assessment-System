@@ -45,7 +45,6 @@ export function DashboardTopbar({ role }: DashboardTopbarProps) {
       </nav>
 
       <PageHeader
-        description={context.description}
         eyebrow={`${context.roleLabel} / ${context.activeItem.sectionLabel}`}
         title={context.title}
         titleAs="h1"

@@ -34,12 +34,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
               </Link>
             </PageToolbar>
           }
-          description="A top-level application failure interrupted the shared shell. Reload the shell or return to a safe route."
           eyebrow="Global error"
-          items={[
-            "This screen is reserved for unrecoverable layout or root rendering failures.",
-            "The recovery path should stay direct, calm, and consistent with the rest of the app.",
-          ]}
           layout="page"
           title="The application shell failed to load."
         />

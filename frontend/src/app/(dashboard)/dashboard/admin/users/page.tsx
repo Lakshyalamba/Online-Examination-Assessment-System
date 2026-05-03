@@ -8,7 +8,6 @@ export default function AdminUsersPage() {
   return (
     <DashboardModuleScaffold
       backHref={routes.adminDashboard}
-      description={page.description}
       nextSteps={[
         "User management workflows can now land here without rebuilding the Admin shell or navigation map.",
         "RBAC and breadcrumbs are already resolved above this page, so feature work can stay focused on user operations.",

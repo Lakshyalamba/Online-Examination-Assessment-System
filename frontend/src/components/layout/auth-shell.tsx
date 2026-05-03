@@ -1,31 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
-
-import {
-  ContentCanvas,
-  PageContainer,
-  SurfaceCard,
-} from "@/components/ui/shell-primitives";
-
-const roleNotes = [
-  {
-    role: "Admin",
-    note: "Oversee users, audit visibility, and system readiness.",
-  },
-  {
-    role: "Examiner",
-    note: "Author questions, schedule exams, and review submissions.",
-  },
-  {
-    role: "Student",
-    note: "Enter assigned exams, monitor time, and view published results.",
-  },
-] as const;
-
-const trustHighlights = [
-  "Role-aware session entry",
-  "Secure timed assessment workflow",
-  "Clear recovery and support path",
-] as const;
+import { motion } from "framer-motion";
 
 type AuthShellProps = {
   children: ReactNode;
@@ -33,40 +9,42 @@ type AuthShellProps = {
 
 export function AuthShell({ children }: AuthShellProps) {
   return (
-    <div className="shell-frame shell-frame--auth">
-      <PageContainer className="shell-frame__container">
-        <ContentCanvas className="auth-shell__canvas" layout="split">
-          <SurfaceCard className="auth-shell__intro" tone="contrast">
-            <div className="auth-shell__intro-head">
-              <p className="shell-eyebrow shell-eyebrow--inverse">Secure entry</p>
-              <h1>Calm sign-in for every academic role.</h1>
-              <p>
-                One shared access point for administrators, examiners, and
-                students before protected navigation and session handling take
-                over.
-              </p>
-            </div>
-            <div className="auth-shell__trust-grid">
-              {trustHighlights.map((item) => (
-                <div key={item} className="auth-shell__trust-item">
-                  {item}
-                </div>
-              ))}
-            </div>
-            <div className="auth-shell__role-list" aria-label="Role hints">
-              {roleNotes.map((item) => (
-                <div key={item.role} className="auth-shell__role-card">
-                  <span>{item.role}</span>
-                  <p>{item.note}</p>
-                </div>
-              ))}
-            </div>
-          </SurfaceCard>
-          <main className="auth-shell__main" id="app-main-content" tabIndex={-1}>
-            {children}
-          </main>
-        </ContentCanvas>
-      </PageContainer>
+    <div className="shell-frame shell-frame--auth" style={{ 
+      minHeight: "100vh", 
+      display: "flex", 
+      alignItems: "center", 
+      justifyContent: "center",
+      background: "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)",
+      position: "relative",
+      overflow: "hidden"
+    }}>
+      {/* Decorative background shapes */}
+      <div style={{ position: "absolute", top: "-10%", left: "-10%", width: "50%", height: "50%", background: "radial-gradient(circle, rgba(27,67,50,0.1) 0%, rgba(255,255,255,0) 70%)", borderRadius: "50%" }}></div>
+      <div style={{ position: "absolute", bottom: "-20%", right: "-10%", width: "60%", height: "60%", background: "radial-gradient(circle, rgba(27,67,50,0.05) 0%, rgba(255,255,255,0) 70%)", borderRadius: "50%" }}></div>
+
+      <div style={{ position: "relative", zIndex: 10, width: "100%", display: "flex", justifyContent: "center", alignItems: "center", padding: "24px" }}>
+        <motion.main 
+          className="auth-shell__main" 
+          id="app-main-content" 
+          tabIndex={-1}
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 260, damping: 20 }}
+          style={{
+            background: "rgba(255, 255, 255, 0.9)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            borderRadius: "24px",
+            boxShadow: "0 20px 40px -10px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.6) inset",
+            padding: "48px",
+            width: "100%",
+            maxWidth: "480px",
+            border: "1px solid rgba(230,230,230,0.6)"
+          }}
+        >
+          {children}
+        </motion.main>
+      </div>
     </div>
   );
 }

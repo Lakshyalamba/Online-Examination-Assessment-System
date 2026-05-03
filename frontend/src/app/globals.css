@@ -119,15 +119,13 @@ ul {
 }
 
 .surface-card[data-tone="tint"] {
-  background:
-    linear-gradient(180deg, rgba(234, 241, 247, 0.96) 0%, rgba(255, 255, 255, 0.98) 100%),
-    var(--color-white-surface);
+  background: var(--color-panel-tint);
 }
 
 .surface-card[data-tone="contrast"] {
-  background: linear-gradient(180deg, #173a5b 0%, var(--color-primary-ink) 100%);
-  border-color: rgba(213, 223, 234, 0.22);
-  color: #f8fafc;
+  background: var(--color-primary-navy);
+  border-color: var(--color-primary-navy);
+  color: #ffffff;
 }
 
 .surface-card[data-tone="contrast"] h1,
@@ -265,9 +263,7 @@ ul {
 .state-page {
   min-height: 100dvh;
   padding-block: var(--space-32);
-  background:
-    radial-gradient(circle at top right, rgba(15, 118, 110, 0.1), transparent 28%),
-    linear-gradient(180deg, rgba(234, 241, 247, 0.88) 0%, #f7fafc 100%);
+  background: var(--color-soft-sky-surface);
 }
 
 .state-page__container {
@@ -288,15 +284,15 @@ ul {
   width: 16px;
   min-height: 100%;
   border-radius: var(--radius-pill);
-  background: linear-gradient(180deg, var(--color-accent-teal) 0%, rgba(15, 118, 110, 0.28) 100%);
+  background: var(--color-accent-teal);
 }
 
 .state-card--error .state-card__signal {
-  background: linear-gradient(180deg, var(--color-danger) 0%, rgba(180, 35, 24, 0.24) 100%);
+  background: var(--color-danger);
 }
 
 .state-card--loading .state-card__signal {
-  background: linear-gradient(180deg, var(--color-primary-navy) 0%, rgba(31, 79, 130, 0.22) 100%);
+  background: var(--color-primary-navy);
 }
 
 .state-card__body {
@@ -400,15 +396,11 @@ ul {
 }
 
 .shell-frame--public {
-  background:
-    radial-gradient(circle at top right, rgba(15, 118, 110, 0.12), transparent 28%),
-    linear-gradient(180deg, var(--color-soft-sky-surface) 0%, rgba(234, 241, 247, 0.88) 100%);
+  background: var(--color-soft-sky-surface);
 }
 
 .shell-frame--auth {
-  background:
-    radial-gradient(circle at top left, rgba(31, 79, 130, 0.08), transparent 32%),
-    linear-gradient(180deg, #f7fafc 0%, rgba(234, 241, 247, 0.82) 100%);
+  background: var(--color-soft-sky-surface);
 }
 
 .shell-frame__container {
@@ -440,10 +432,10 @@ ul {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-button);
   border: 1px solid var(--color-border-slate);
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: var(--shadow-quiet);
+  background: var(--color-white-surface);
+  box-shadow: none;
   padding: 10px 14px;
   min-height: 42px;
 }
@@ -462,8 +454,8 @@ ul {
 .button-link--primary {
   background: var(--color-accent-teal);
   border-color: var(--color-accent-teal);
-  color: #f8fafc;
-  box-shadow: 0 14px 28px rgba(15, 118, 110, 0.18);
+  color: #ffffff;
+  box-shadow: none;
 }
 
 .button-link--primary:hover {
@@ -518,7 +510,8 @@ ul {
 
 .landing-display {
   font-size: var(--text-display);
-  max-width: 13ch;
+  text-align: center;
+  margin: 0 auto;
 }
 
 .landing-lead {
@@ -1072,16 +1065,14 @@ ul {
 .dashboard-shell {
   display: grid;
   grid-template-columns: minmax(272px, var(--sidebar-width)) minmax(0, 1fr);
-  background:
-    radial-gradient(circle at top right, rgba(15, 118, 110, 0.08), transparent 26%),
-    var(--color-panel-tint);
+  background: var(--color-panel-tint);
 }
 
 .dashboard-shell__sidebar {
-  background: linear-gradient(180deg, #173a5b 0%, var(--color-primary-ink) 100%);
-  color: #f8fafc;
+  background: var(--color-primary-navy);
+  color: #ffffff;
   padding: var(--space-32) var(--space-24);
-  border-right: 1px solid rgba(213, 223, 234, 0.14);
+  border-right: 1px solid var(--color-border-slate);
 }
 
 .dashboard-shell__sidebar--desktop {
@@ -1195,9 +1186,9 @@ ul {
   border: 1px solid rgba(213, 223, 234, 0.16);
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.04);
-  box-shadow: 0 14px 28px rgba(9, 25, 41, 0.08);
+  box-shadow: none;
   padding: 14px 16px;
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 .dashboard-nav__link:hover {
@@ -1208,13 +1199,9 @@ ul {
 
 .dashboard-nav__link.is-active,
 .dashboard-nav__link[data-active="true"] {
-  border-color: rgba(125, 211, 199, 0.56);
-  background: linear-gradient(
-    180deg,
-    rgba(15, 118, 110, 0.24) 0%,
-    rgba(255, 255, 255, 0.08) 100%
-  );
-  box-shadow: 0 16px 32px rgba(9, 25, 41, 0.16);
+  border-color: var(--color-accent-teal);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
 }
 
 .dashboard-nav__link-title {
@@ -1230,9 +1217,7 @@ ul {
 
 .dashboard-shell__content {
   padding-block: var(--space-32);
-  background:
-    radial-gradient(circle at top right, rgba(15, 118, 110, 0.08), transparent 24%),
-    linear-gradient(180deg, rgba(234, 241, 247, 0.92) 0%, #f7fafc 100%);
+  background: var(--color-soft-sky-surface);
 }
 
 .dashboard-shell__content-container {
@@ -1370,9 +1355,9 @@ ul {
     position: static;
     min-height: 100dvh;
     overflow-y: auto;
-    background: linear-gradient(180deg, #173a5b 0%, var(--color-primary-ink) 100%);
+    background: var(--color-primary-navy);
     padding: var(--space-24);
-    box-shadow: 18px 0 36px rgba(9, 25, 41, 0.2);
+    box-shadow: none;
   }
 
   .dashboard-shell__brand--desktop {

@@ -8,7 +8,6 @@ export default function ExaminerQuestionsPage() {
   return (
     <DashboardModuleScaffold
       backHref={routes.examinerDashboard}
-      description={page.description}
       nextSteps={[
         "Question authoring and maintenance can now land here without changing the shared Examiner shell.",
         "Sidebar state and breadcrumbs already point to this route, so later CRUD work keeps consistent wayfinding.",

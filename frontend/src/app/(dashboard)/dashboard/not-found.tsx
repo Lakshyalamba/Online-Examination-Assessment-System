@@ -17,12 +17,7 @@ export default function DashboardRouteNotFound() {
           </Link>
         </PageToolbar>
       }
-      description="The shared dashboard shell is available, but this destination is not part of the current role-aware route structure."
       eyebrow="Dashboard not found"
-      items={[
-        "Use the sidebar or breadcrumbs to move back to a valid role destination.",
-        "New dashboard pages should be added through the shared route map and shell contracts.",
-      ]}
       title="This dashboard page is not available."
     />
   );

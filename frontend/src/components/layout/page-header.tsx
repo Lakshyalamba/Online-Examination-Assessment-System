@@ -5,7 +5,6 @@ import { cn } from "@/lib/class-names";
 type PageHeaderProps = {
   eyebrow?: string;
   title: string;
-  description?: string;
   actions?: ReactNode;
   tone?: "default" | "inverse";
   titleAs?: "h1" | "h2" | "h3";
@@ -21,7 +20,6 @@ type PageToolbarProps = {
 export function PageHeader({
   eyebrow,
   title,
-  description,
   actions,
   tone = "default",
   titleAs: TitleTag = "h2",
@@ -38,7 +36,6 @@ export function PageHeader({
       <div className="page-header__copy">
         {eyebrow ? <p className="page-header__eyebrow">{eyebrow}</p> : null}
         <TitleTag>{title}</TitleTag>
-        {description ? <p>{description}</p> : null}
       </div>
 
       {actions ? <div className="page-header__actions">{actions}</div> : null}

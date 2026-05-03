@@ -8,7 +8,6 @@ import type { AppRole } from "@oeas/backend/modules/auth/types";
 type DashboardModuleScaffoldProps = {
   role: AppRole;
   title: string;
-  description: string;
   backHref: string;
   nextSteps: string[];
 };
@@ -16,7 +15,6 @@ type DashboardModuleScaffoldProps = {
 export function DashboardModuleScaffold({
   role,
   title,
-  description,
   backHref,
   nextSteps,
 }: DashboardModuleScaffoldProps) {
@@ -31,7 +29,6 @@ export function DashboardModuleScaffold({
               </Link>
             </PageToolbar>
           }
-          description={description}
           eyebrow={`${role} module`}
           title={title}
         />
@@ -45,9 +42,7 @@ export function DashboardModuleScaffold({
             </Link>
           </PageToolbar>
         }
-        description="The route, header, breadcrumbs, and shared shell are ready. Feature owners can now land real content here without rebuilding the page structure."
         eyebrow="Empty state baseline"
-        items={nextSteps}
         title="No module content is connected yet."
       />
     </div>

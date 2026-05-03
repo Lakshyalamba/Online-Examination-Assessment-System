@@ -38,10 +38,10 @@ export function DashboardSidebarNav({ role, id }: DashboardSidebarNavProps) {
                   data-active={isActive}
                   href={item.href}
                 >
-                  <span className="dashboard-nav__link-title">{item.label}</span>
-                  <span className="dashboard-nav__link-description">
-                    {item.description}
-                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <item.icon size={20} />
+                    <span className="dashboard-nav__link-title">{item.label}</span>
+                  </div>
                 </Link>
               );
             })}

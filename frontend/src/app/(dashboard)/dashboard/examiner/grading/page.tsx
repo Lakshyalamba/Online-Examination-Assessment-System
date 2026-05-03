@@ -8,7 +8,6 @@ export default function ExaminerGradingPage() {
   return (
     <DashboardModuleScaffold
       backHref={routes.examinerDashboard}
-      description={page.description}
       nextSteps={[
         "Grading and review flows can now build here without competing with authoring or analytics route structures.",
         "The shared shell already keeps this route distinct inside the Examiner review section.",

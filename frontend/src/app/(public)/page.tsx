@@ -1,95 +1,36 @@
-import Link from "next/link";
+"use client";
 
+import Link from "next/link";
+import { motion } from "framer-motion";
 import { PublicShell } from "@/components/layout/public-shell";
 import { SurfaceCard } from "@/components/ui/shell-primitives";
 import { routes } from "@oeas/backend/lib/routes";
 
 const heroMetrics = [
-  {
-    label: "Question formats",
-    value: "5",
-    detail: "Objective and descriptive patterns",
-  },
-  {
-    label: "Core roles",
-    value: "3",
-    detail: "Admin, Examiner, Student",
-  },
-  {
-    label: "Exam lifecycle",
-    value: "4",
-    detail: "Create, attempt, review, publish",
-  },
+  { label: "Question formats", value: "5", detail: "Objective and descriptive patterns" },
+  { label: "Core roles", value: "3", detail: "Admin, Examiner, Student" },
+  { label: "Exam lifecycle", value: "4", detail: "Create, attempt, review, publish" },
 ] as const;
 
 const featureCards = [
-  {
-    eyebrow: "Question bank",
-    title: "Reuse structured academic content",
-    description:
-      "Build questions once, keep type and difficulty metadata consistent, and reuse them across later assessments.",
-  },
-  {
-    eyebrow: "Timed exams",
-    title: "Run exam windows with operational clarity",
-    description:
-      "Schedule controlled assessment windows and prepare a stable runtime for timed attempts and submissions.",
-  },
-  {
-    eyebrow: "Grading",
-    title: "Blend objective scoring with manual review",
-    description:
-      "Support auto-evaluation where possible while leaving room for examiner-led review and final result control.",
-  },
-  {
-    eyebrow: "Analytics",
-    title: "Track readiness, workload, and outcomes",
-    description:
-      "Give faculty and evaluators a coherent view of exam activity, pending work, and publication progress.",
-  },
-  {
-    eyebrow: "Auditability",
-    title: "Keep sensitive actions visible",
-    description:
-      "Preserve trust through role-aware access, operational traceability, and consistent review checkpoints.",
-  },
+  { eyebrow: "Question bank", title: "Reuse structured academic content" },
+  { eyebrow: "Timed exams", title: "Run exam windows with operational clarity" },
+  { eyebrow: "Grading", title: "Blend objective scoring with manual review" },
+  { eyebrow: "Analytics", title: "Track readiness, workload, and outcomes" },
+  { eyebrow: "Auditability", title: "Keep sensitive actions visible" },
 ] as const;
 
 const roleCards = [
-  {
-    role: "Admin",
-    summary: "Govern access, audit visibility, and system-wide readiness.",
-    actions: ["Manage users", "Review audit logs", "Monitor activity"],
-  },
-  {
-    role: "Examiner",
-    summary: "Author academic content and move exams from draft to results.",
-    actions: ["Build question banks", "Schedule assessments", "Review submissions"],
-  },
-  {
-    role: "Student",
-    summary: "Enter assigned assessments with clear timing and result visibility.",
-    actions: ["See assigned exams", "Complete timed attempts", "Check published results"],
-  },
+  { role: "Admin", actions: ["Manage users", "Review audit logs", "Monitor activity"] },
+  { role: "Examiner", actions: ["Build question banks", "Schedule assessments", "Review submissions"] },
+  { role: "Student", actions: ["See assigned exams", "Complete timed attempts", "Check published results"] },
 ] as const;
 
 const workflowSteps = [
-  {
-    step: "Create",
-    detail: "Compose reusable questions and prepare exam structure.",
-  },
-  {
-    step: "Attempt",
-    detail: "Open the timed exam experience with visible status and guidance.",
-  },
-  {
-    step: "Review",
-    detail: "Move submitted work into objective grading and examiner review.",
-  },
-  {
-    step: "Publish",
-    detail: "Release trustworthy results once evaluation is complete.",
-  },
+  { step: "Create" },
+  { step: "Attempt" },
+  { step: "Review" },
+  { step: "Publish" },
 ] as const;
 
 const footerItems = [
@@ -98,162 +39,138 @@ const footerItems = [
   "Prepared for team-based module implementation",
 ] as const;
 
+const fadeInUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" as any } }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
 export default function LandingPage() {
   return (
     <PublicShell>
-      <section className="landing-hero">
-        <div className="landing-hero__copy">
-          <p className="landing-kicker">Serious assessment infrastructure for colleges</p>
-          <h2 className="landing-display">
-            Manage the full examination lifecycle in one calm, role-aware
-            workspace.
-          </h2>
-          <p className="landing-lead">
-            The Online Examination Assessment System gives faculty, evaluators,
-            and demo audiences a clear view of question authoring, timed exam
-            delivery, grading, results, analytics, and auditability without the
-            noise of a generic dashboard template.
-          </p>
-          <div className="landing-actions">
-            <Link className="button-link button-link--primary" href={routes.login}>
+      <section className="landing-hero" style={{ display: "flex", flexDirection: "column", gap: "48px", alignItems: "center", textAlign: "center", paddingTop: "40px" }}>
+        <motion.div 
+          className="landing-hero__copy" 
+          style={{ maxWidth: "1100px", margin: "0 auto", width: "100%" }}
+          initial="hidden"
+          animate="visible"
+          variants={staggerContainer}
+        >
+          <motion.p variants={fadeInUp} className="landing-kicker">Serious assessment infrastructure for colleges</motion.p>
+          <motion.h2 variants={fadeInUp} className="landing-display" style={{ fontSize: "2.75rem", lineHeight: 1.15, margin: "32px auto", textAlign: "center", width: "100%" }}>
+            Role-aware examination operations.
+          </motion.h2>
+          <motion.div variants={fadeInUp} className="landing-actions" style={{ justifyContent: "center", marginBottom: "48px" }}>
+            <Link className="button-link button-link--primary" href={routes.login} style={{ padding: "12px 32px", fontSize: "1.125rem" }}>
               Sign in to continue
             </Link>
-            <a className="button-link button-link--secondary" href="#platform-flow">
+            <a className="button-link button-link--secondary" href="#platform-flow" style={{ padding: "12px 32px", fontSize: "1.125rem" }}>
               View workflow
             </a>
-          </div>
-          <div className="landing-metrics" aria-label="Platform overview">
+          </motion.div>
+          
+          <motion.div variants={fadeInUp} style={{ width: "100%", maxWidth: "1000px", margin: "0 auto 48px auto", borderRadius: "16px", overflow: "hidden", boxShadow: "0 24px 48px -12px rgba(0,0,0,0.15)" }}>
+            <img src="/hero-dashboard.png" alt="Platform Dashboard Preview" style={{ width: "100%", height: "auto", display: "block" }} />
+          </motion.div>
+
+          <motion.div variants={staggerContainer} className="landing-metrics" aria-label="Platform overview" style={{ justifyContent: "center" }}>
             {heroMetrics.map((item) => (
-              <div key={item.label} className="landing-metric">
+              <motion.div variants={fadeInUp} key={item.label} className="landing-metric">
                 <span>{item.label}</span>
                 <strong>{item.value}</strong>
                 <p>{item.detail}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
-        </div>
-        <SurfaceCard className="preview-board" tone="tint">
-          <div className="preview-board__header">
-            <div>
-              <p className="surface-card__eyebrow">Product preview</p>
-              <h3>Assessment operations at a glance</h3>
-            </div>
-            <div className="preview-board__meta">
-              <span className="status-pill status-pill--scheduled">Scheduled</span>
-              <span className="preview-code">EXM-2401</span>
-            </div>
-          </div>
-          <div className="preview-board__metrics">
-            <div className="preview-tile">
-              <span>Assigned students</span>
-              <strong>126</strong>
-              <p>Across internal mid-semester assessments</p>
-            </div>
-            <div className="preview-tile">
-              <span>Pending review</span>
-              <strong>18</strong>
-              <p>Descriptive answers queued for examiners</p>
-            </div>
-            <div className="preview-tile">
-              <span>Results published</span>
-              <strong>74%</strong>
-              <p>Latest processed exam batches</p>
-            </div>
-          </div>
-          <div className="preview-board__timeline">
-            <div className="preview-timeline-item">
-              <span className="preview-timeline-item__step">Create</span>
-              <p>Question bank synced with section-ready metadata.</p>
-            </div>
-            <div className="preview-timeline-item">
-              <span className="preview-timeline-item__step">Attempt</span>
-              <p>Timed window opens with autosave and status checkpoints.</p>
-            </div>
-            <div className="preview-timeline-item">
-              <span className="preview-timeline-item__step">Review</span>
-              <p>Objective grading and descriptive review move into one queue.</p>
-            </div>
-          </div>
-        </SurfaceCard>
+          </motion.div>
+        </motion.div>
       </section>
 
-      <section className="landing-section" aria-labelledby="feature-grid-heading">
+      <motion.section 
+        className="landing-section" 
+        aria-labelledby="feature-grid-heading" id="features"
+        initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUp}
+      >
         <div className="section-heading">
           <p className="shell-eyebrow">Platform capabilities</p>
           <h2 id="feature-grid-heading">Built for operationally clear assessment delivery</h2>
-          <p>
-            The entry experience introduces the shared product language before
-            module-specific workflows expand underneath it.
-          </p>
         </div>
-        <div className="feature-grid">
+        <motion.div className="feature-grid" variants={staggerContainer}>
           {featureCards.map((item) => (
-            <SurfaceCard key={item.title} className="feature-card">
-              <p className="surface-card__eyebrow">{item.eyebrow}</p>
-              <div className="surface-card__copy">
-                <h3>{item.title}</h3>
-                <p>{item.description}</p>
-              </div>
-            </SurfaceCard>
+            <motion.div key={item.title} variants={fadeInUp}>
+              <SurfaceCard className="feature-card">
+                <p className="surface-card__eyebrow">{item.eyebrow}</p>
+                <div className="surface-card__copy">
+                  <h3>{item.title}</h3>
+                </div>
+              </SurfaceCard>
+            </motion.div>
           ))}
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
 
-      <section className="landing-section" aria-labelledby="role-grid-heading">
+      <motion.section 
+        className="landing-section" 
+        aria-labelledby="role-grid-heading"
+        initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUp}
+      >
         <div className="section-heading">
           <p className="shell-eyebrow">Role-based access</p>
           <h2 id="role-grid-heading">One platform, three clear operating perspectives</h2>
         </div>
-        <div className="role-grid">
+        <motion.div className="role-grid" variants={staggerContainer}>
           {roleCards.map((item) => (
-            <SurfaceCard key={item.role} className="role-card">
-              <div className="role-card__header">
-                <h3>{item.role}</h3>
-                <span className="role-card__badge">{item.role}</span>
-              </div>
-              <p>{item.summary}</p>
-              <ul className="surface-card__list">
-                {item.actions.map((action) => (
-                  <li key={action}>{action}</li>
-                ))}
-              </ul>
-            </SurfaceCard>
+            <motion.div key={item.role} variants={fadeInUp}>
+              <SurfaceCard className="role-card">
+                <div className="role-card__header">
+                  <h3>{item.role}</h3>
+                  <span className="role-card__badge">{item.role}</span>
+                </div>
+                <ul className="surface-card__list">
+                  {item.actions.map((action) => (
+                    <li key={action}>{action}</li>
+                  ))}
+                </ul>
+              </SurfaceCard>
+            </motion.div>
           ))}
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
 
-      <SurfaceCard
-        as="section"
-        className="workflow-board"
-        tone="tint"
-        padding="compact"
-        id="platform-flow"
+      <motion.div 
+        initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUp}
       >
-        <div className="section-heading section-heading--compact">
-          <p className="shell-eyebrow">Platform flow</p>
-          <h2>Create, attempt, review, and publish with one shared structure</h2>
-        </div>
-        <div className="workflow-strip">
-          {workflowSteps.map((item, index) => (
-            <div key={item.step} className="workflow-step">
-              <div className="workflow-step__index">{`0${index + 1}`}</div>
-              <div className="workflow-step__copy">
-                <h3>{item.step}</h3>
-                <p>{item.detail}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </SurfaceCard>
+        <SurfaceCard as="section" className="workflow-board" tone="tint" padding="compact" id="platform-flow">
+          <div className="section-heading section-heading--compact">
+            <p className="shell-eyebrow">Platform flow</p>
+            <h2>Create, attempt, review, and publish with one shared structure</h2>
+          </div>
+          <motion.div className="workflow-strip" variants={staggerContainer}>
+            {workflowSteps.map((item, index) => (
+              <motion.div key={item.step} className="workflow-step" variants={fadeInUp}>
+                <div className="workflow-step__index">{`0${index + 1}`}</div>
+                <div className="workflow-step__copy">
+                  <h3>{item.step}</h3>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </SurfaceCard>
+      </motion.div>
 
-      <footer className="landing-footer">
+      <motion.footer 
+        className="landing-footer"
+        initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}
+      >
         <div className="landing-footer__copy">
           <p className="shell-eyebrow">Project context</p>
           <h2>Shared scaffold for a five-member implementation team</h2>
-          <p>
-            This landing screen gives evaluators and teammates a coherent entry
-            point before protected routes, RBAC, and feature modules are wired.
-          </p>
         </div>
         <div className="landing-footer__meta">
           <ul className="surface-card__list">
@@ -265,7 +182,7 @@ export default function LandingPage() {
             Team: Yash, Rakshita, Lakshya, Ravleen, Abhishek
           </p>
         </div>
-      </footer>
+      </motion.footer>
     </PublicShell>
   );
 }

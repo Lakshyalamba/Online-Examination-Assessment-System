@@ -32,12 +32,7 @@ export default function DashboardError({
           </Link>
         </PageToolbar>
       }
-      description="A dashboard route failed inside the shared shell. Retry the current view or return to a safe dashboard entry point."
       eyebrow="Dashboard error"
-      items={[
-        "The shared shell should stay intact even when a nested route fails.",
-        "Recovery actions should keep the user close to their allowed workspace.",
-      ]}
       title="This dashboard view could not be rendered."
     />
   );

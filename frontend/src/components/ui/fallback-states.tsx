@@ -7,9 +7,7 @@ import { PageContainer, SurfaceCard } from "@/components/ui/shell-primitives";
 type SharedStateProps = {
   eyebrow: string;
   title: string;
-  description: string;
   actions?: ReactNode;
-  items?: readonly string[];
   layout?: "inline" | "page";
   tone?: "default" | "tint" | "contrast";
   className?: string;
@@ -19,7 +17,6 @@ type ErrorStateProps = Omit<SharedStateProps, "tone">;
 type LoadingStateProps = {
   eyebrow?: string;
   title?: string;
-  description?: string;
   layout?: "inline" | "page";
   className?: string;
 };
@@ -47,9 +44,7 @@ function StateLayout({
 function SharedStateCard({
   eyebrow,
   title,
-  description,
   actions,
-  items,
   layout = "inline",
   tone = "default",
   className,
@@ -61,15 +56,6 @@ function SharedStateCard({
         <div className="state-card__body">
           <p className="state-card__eyebrow">{eyebrow}</p>
           <h1>{title}</h1>
-          <p className="state-card__description">{description}</p>
-
-          {items?.length ? (
-            <ul className="state-card__list">
-              {items.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          ) : null}
         </div>
 
         {actions ? <div className="state-card__actions">{actions}</div> : null}
@@ -103,12 +89,7 @@ export function NotFoundState({
           </Link>
         </>
       }
-      description="The page may have moved, the link may be outdated, or you may be looking for a protected area that requires a valid sign-in."
       eyebrow="Not found"
-      items={[
-        "Use the shared navigation or a safe entry route to continue.",
-        "Protected dashboard pages still require the correct signed-in role.",
-      ]}
       layout={layout}
       title="This page is not available."
       tone="default"
@@ -119,7 +100,6 @@ export function NotFoundState({
 export function LoadingState({
   eyebrow = "Loading",
   title = "Preparing the shared workspace",
-  description = "Loading shared navigation, page structure, and session-aware shell state.",
   layout = "inline",
   className,
 }: LoadingStateProps) {
@@ -134,7 +114,6 @@ export function LoadingState({
         <div className="state-card__body">
           <p className="state-card__eyebrow">{eyebrow}</p>
           <h1>{title}</h1>
-          <p className="state-card__description">{description}</p>
 
           <div className="loading-state__chips" aria-hidden="true">
             <span />
