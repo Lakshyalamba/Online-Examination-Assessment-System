@@ -1,5 +1,5 @@
 {
-  "name": "online-examination-assessment-system",
+  "name": "@oeas/frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,17 +12,20 @@
     "test": "npm run lint && npm run build"
   },
   "dependencies": {
+    "@oeas/backend": "file:../backend",
     "bcryptjs": "^3.0.3",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.14.0",
     "next": "^16.2.3",
     "next-auth": "^5.0.0-beta.30",
+    "pg": "^8.16.3",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
+    "@types/pg": "^8.15.6",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.4",

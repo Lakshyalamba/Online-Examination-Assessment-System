@@ -24,9 +24,6 @@
       }
     ],
     "paths": {
-      "@oeas/backend/*": [
-        "../backend/src/*"
-      ],
       "@/*": [
         "./src/*"
       ]
@@ -37,9 +34,6 @@
     "**/*.ts",
     "**/*.tsx",
     "**/*.d.ts",
-    "../backend/src/**/*.ts",
-    "../backend/src/**/*.tsx",
-    "../backend/src/**/*.d.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],

@@ -1,0 +1,16 @@
+{
+  "name": "online-examination-assessment-system-workspace",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm --workspace @oeas/frontend run dev",
+    "build": "npm --workspace @oeas/frontend run build",
+    "start": "npm --workspace @oeas/frontend run start",
+    "lint": "npm --workspace @oeas/frontend run lint",
+    "db:setup": "npm --workspace @oeas/backend run db:setup",
+    "db:seed": "npm --workspace @oeas/backend run db:seed"
+  }
+}
