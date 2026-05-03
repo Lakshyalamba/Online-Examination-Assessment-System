@@ -2,14 +2,14 @@ import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
 import { routes } from "../routes";
+import { getAuthSecret } from "../env";
 import { InactiveAccountError } from "./errors";
 import { validateCredentials } from "../../modules/auth/service";
 import type { AppRole } from "../../modules/auth/types";
 
 export const authConfig = {
   trustHost: true,
-  secret:
-    process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "oeas-dev-secret",
+  secret: getAuthSecret(),
   pages: {
     signIn: routes.login,
   },

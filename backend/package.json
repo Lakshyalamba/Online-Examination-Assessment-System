@@ -3,16 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "db:setup": "node ./scripts/setup-database.mjs",
+    "db:seed": "node ./scripts/seed-demo-users.mjs"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "dotenv": "^17.2.3",
     "next": "^16.2.3",
     "next-auth": "^5.0.0-beta.30",
+    "pg": "^8.16.3",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
+    "@types/pg": "^8.15.6",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "typescript": "^6.0.2"
@@ -20,12 +27,13 @@
   "exports": {
     "./auth": "./src/auth.ts",
     "./lib/routes": "./src/lib/routes.ts",
+    "./lib/db": "./src/lib/db.ts",
+    "./lib/env": "./src/lib/env.ts",
     "./lib/auth/auth.config": "./src/lib/auth/auth.config.ts",
     "./lib/auth/errors": "./src/lib/auth/errors.ts",
     "./lib/auth/rbac": "./src/lib/auth/rbac.ts",
     "./modules/auth/actions": "./src/modules/auth/actions.ts",
     "./modules/auth/login-form-state": "./src/modules/auth/login-form-state.ts",
-    "./modules/auth/mock-users": "./src/modules/auth/mock-users.ts",
     "./modules/auth/service": "./src/modules/auth/service.ts",
     "./modules/auth/types": "./src/modules/auth/types.ts",
     "./modules/auth/components/dashboard-session-panel": "./src/modules/auth/components/dashboard-session-panel.tsx",

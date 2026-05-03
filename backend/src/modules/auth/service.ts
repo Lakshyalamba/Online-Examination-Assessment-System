@@ -1,7 +1,7 @@
 import { compare } from "bcryptjs";
 
-import { mockUsers } from "./mock-users";
-import type { SessionUser } from "./types";
+import { db } from "../../lib/db";
+import type { AuthUserRecord, SessionUser } from "./types";
 
 export type CredentialValidationResult =
   | {
@@ -13,17 +13,33 @@ export type CredentialValidationResult =
       reason: "invalid_credentials" | "inactive_account";
     };
 
-export function findUserByEmail(email: string) {
+export async function findUserByEmail(email: string): Promise<AuthUserRecord | null> {
   const normalizedEmail = email.trim().toLowerCase();
 
-  return mockUsers.find((user) => user.email.toLowerCase() === normalizedEmail);
+  const result = await db.query<AuthUserRecord>(
+    `
+      select
+        id,
+        name,
+        email,
+        role,
+        status,
+        password_hash as "passwordHash"
+      from users
+      where lower(email) = $1
+      limit 1
+    `,
+    [normalizedEmail],
+  );
+
+  return result.rows[0] ?? null;
 }
 
 export async function validateCredentials(
   email: string,
   password: string,
 ): Promise<CredentialValidationResult> {
-  const user = findUserByEmail(email);
+  const user = await findUserByEmail(email);
 
   if (!user) {
     return { success: false, reason: "invalid_credentials" };
