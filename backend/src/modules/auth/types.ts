@@ -18,3 +18,9 @@ export type SessionUser = {
   role: AppRole;
   isActive: true;
 };
+
+export type UserRegistrationInput = {
+  name: string;
+  email: string;
+  password: string;
+};

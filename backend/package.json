@@ -38,6 +38,7 @@
     "./modules/auth/types": "./src/modules/auth/types.ts",
     "./modules/auth/components/dashboard-session-panel": "./src/modules/auth/components/dashboard-session-panel.tsx",
     "./modules/auth/components/login-form": "./src/modules/auth/components/login-form.tsx",
+    "./modules/auth/components/signup-form": "./src/modules/auth/components/signup-form.tsx",
     "./modules/auth/components/role-dashboard-entry": "./src/modules/auth/components/role-dashboard-entry.tsx"
   }
 }

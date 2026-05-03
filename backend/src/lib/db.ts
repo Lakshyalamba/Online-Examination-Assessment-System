@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import { Pool, type QueryResultRow } from "pg";
 
 import { getDatabaseUrl } from "./env";
 
@@ -18,8 +18,21 @@ function createPool() {
   });
 }
 
-export const db = globalThis.__oeasPgPool ?? createPool();
+export function getDb() {
+  if (!globalThis.__oeasPgPool) {
+    globalThis.__oeasPgPool = createPool();
+  }
 
-if (process.env.NODE_ENV !== "production") {
-  globalThis.__oeasPgPool = db;
+  return globalThis.__oeasPgPool;
 }
+
+export async function dbQuery<T extends QueryResultRow>(
+  text: string,
+  params: unknown[] = [],
+) {
+  return getDb().query<T>(text, params);
+}
+
+export const db = {
+  query: dbQuery,
+};

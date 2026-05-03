@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { PublicShell } from "@/components/layout/public-shell";
 import { SurfaceCard } from "@/components/ui/shell-primitives";
@@ -39,9 +40,14 @@ const footerItems = [
   "Prepared for team-based module implementation",
 ] as const;
 
+const fadeInTransition = {
+  duration: 0.6,
+  ease: "easeOut",
+} as const;
+
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" as any } }
+  visible: { opacity: 1, y: 0, transition: fadeInTransition }
 };
 
 const staggerContainer = {
@@ -77,7 +83,14 @@ export default function LandingPage() {
           </motion.div>
           
           <motion.div variants={fadeInUp} style={{ width: "100%", maxWidth: "1000px", margin: "0 auto 48px auto", borderRadius: "16px", overflow: "hidden", boxShadow: "0 24px 48px -12px rgba(0,0,0,0.15)" }}>
-            <img src="/hero-dashboard.png" alt="Platform Dashboard Preview" style={{ width: "100%", height: "auto", display: "block" }} />
+            <Image
+              src="/hero-dashboard.png"
+              alt="Platform Dashboard Preview"
+              width={1600}
+              height={900}
+              priority
+              style={{ width: "100%", height: "auto", display: "block" }}
+            />
           </motion.div>
 
           <motion.div variants={staggerContainer} className="landing-metrics" aria-label="Platform overview" style={{ justifyContent: "center" }}>

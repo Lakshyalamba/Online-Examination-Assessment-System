@@ -45,6 +45,15 @@ export function DashboardModuleScaffold({
         eyebrow="Empty state baseline"
         title="No module content is connected yet."
       />
+
+      <SurfaceCard>
+        <p className="surface-card__eyebrow">Next steps</p>
+        <ul className="surface-card__list">
+          {nextSteps.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ul>
+      </SurfaceCard>
     </div>
   );
 }

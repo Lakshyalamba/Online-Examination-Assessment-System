@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { routes } from "@oeas/backend/lib/routes";
 import { LoginForm } from "@oeas/backend/modules/auth/components/login-form";
+import { SignupForm } from "@oeas/backend/modules/auth/components/signup-form";
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
@@ -81,21 +82,23 @@ export default function LoginPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.2 }}
-                style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: "40px 0" }}
+                style={{ textAlign: "left" }}
               >
-                <div style={{ background: "#f3f4f6", borderRadius: "50%", padding: "16px", marginBottom: "16px" }}>
-                  <ArrowRight size={32} color="#9ca3af" />
+                <div style={{ marginBottom: "20px", padding: "16px", borderRadius: "12px", background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
+                    <div style={{ background: "#ecfdf3", borderRadius: "999px", padding: "10px", display: "flex" }}>
+                      <ArrowRight size={18} color="#1b4332" />
+                    </div>
+                    <h3 style={{ fontSize: "1rem", fontWeight: 600, color: "#111827", margin: 0 }}>
+                      Student self-service registration
+                    </h3>
+                  </div>
+                  <p style={{ fontSize: "0.9rem", color: "#6b7280", margin: 0, lineHeight: 1.5 }}>
+                    Create a student account here. Administrator and examiner accounts are still created by the institution.
+                  </p>
                 </div>
-                <h3 style={{ fontSize: "1.125rem", fontWeight: 600, color: "#111827", marginBottom: "8px" }}>Sign up is currently restricted</h3>
-                <p style={{ fontSize: "0.925rem", color: "#6b7280", maxWidth: "280px" }}>
-                  Please use the <strong>Test Profiles</strong> in the login tab to explore the platform modules and tests.
-                </p>
-                <button 
-                  onClick={() => setActiveTab("login")}
-                  style={{ marginTop: "24px", padding: "8px 24px", background: "#1b4332", color: "white", borderRadius: "6px", fontWeight: 500, cursor: "pointer" }}
-                >
-                  Go to Login
-                </button>
+
+                <SignupForm />
               </motion.div>
             )}
           </AnimatePresence>

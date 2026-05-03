@@ -3,7 +3,10 @@ import Credentials from "next-auth/providers/credentials";
 
 import { routes } from "../routes";
 import { getAuthSecret } from "../env";
-import { InactiveAccountError } from "./errors";
+import {
+  AuthenticationUnavailableError,
+  InactiveAccountError,
+} from "./errors";
 import { validateCredentials } from "../../modules/auth/service";
 import type { AppRole } from "../../modules/auth/types";
 
@@ -33,6 +36,10 @@ export const authConfig = {
         const result = await validateCredentials(email, password);
 
         if (!result.success) {
+          if (result.reason === "service_unavailable") {
+            throw new AuthenticationUnavailableError();
+          }
+
           if (result.reason === "inactive_account") {
             throw new InactiveAccountError();
           }
