@@ -66,9 +66,6 @@ export function PublicHeader() {
           <Link href="#features" style={{ fontSize: "0.875rem", fontWeight: 500, color: "#374151", textDecoration: "none" }}>
             Features
           </Link>
-          <Link href="#platform-flow" style={{ fontSize: "0.875rem", fontWeight: 500, color: "#374151", textDecoration: "none" }}>
-            Workflow
-          </Link>
           <Link
             href={routes.login}
             style={{

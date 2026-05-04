@@ -77,9 +77,6 @@ export default function LandingPage() {
             <Link className="button-link button-link--primary" href={routes.login} style={{ padding: "12px 32px", fontSize: "1.125rem" }}>
               Sign in to continue
             </Link>
-            <a className="button-link button-link--secondary" href="#platform-flow" style={{ padding: "12px 32px", fontSize: "1.125rem" }}>
-              View workflow
-            </a>
           </motion.div>
           
           <motion.div variants={fadeInUp} style={{ width: "100%", maxWidth: "1000px", margin: "0 auto 48px auto", borderRadius: "16px", overflow: "hidden", boxShadow: "0 24px 48px -12px rgba(0,0,0,0.15)" }}>
