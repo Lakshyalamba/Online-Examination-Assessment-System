@@ -4,12 +4,8 @@ import {
   requireApiUser,
 } from "@/lib/server/assessment-service";
 
-export default function ExaminerQuestionsPage() {
-  return <ExaminerQuestions />;
-}
-
-async function ExaminerQuestions() {
-  const user = await requireApiUser(["EXAMINER"]);
+export default async function AdminQuestionsPage() {
+  const user = await requireApiUser(["ADMIN"]);
   const questions = await listQuestionsForUser(user);
 
   return <QuestionBankManager initialQuestions={questions} />;

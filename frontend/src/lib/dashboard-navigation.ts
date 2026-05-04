@@ -83,6 +83,16 @@ const dashboardNavigationByRole: Record<AppRole, DashboardRoleConfig> = {
             headerTitle: "Operational Reports",
             icon: FileText,
           },
+          {
+            label: "Question Bank",
+            href: routes.adminQuestions,
+            icon: Library,
+          },
+          {
+            label: "Exams",
+            href: routes.adminExams,
+            icon: GraduationCap,
+          },
         ],
       },
     ],
