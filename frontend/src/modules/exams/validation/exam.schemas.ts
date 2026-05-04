@@ -4,12 +4,12 @@ import {
   EXAM_ASSIGNMENT_ROLES,
   EXAM_ASSIGNMENT_STATUSES,
   EXAM_AUTHORING_STATUSES,
-} from "../domain/exam.types.js";
+} from "../domain/exam.types";
 import {
   QUESTION_DIFFICULTIES,
   QUESTION_REVIEW_MODES,
   QUESTION_TYPES,
-} from "../../questions/domain/question.types.js";
+} from "../../questions/domain/question.types";
 
 const TITLE_MAX_LENGTH = 180;
 const CODE_MAX_LENGTH = 32;

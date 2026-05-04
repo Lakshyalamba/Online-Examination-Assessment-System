@@ -2,7 +2,7 @@ import type {
   QuestionDifficulty,
   QuestionReviewMode,
   QuestionType,
-} from "../../questions/domain/question.types.js";
+} from "../../questions/domain/question.types";
 
 export const EXAM_STATUSES = [
   "DRAFT",
