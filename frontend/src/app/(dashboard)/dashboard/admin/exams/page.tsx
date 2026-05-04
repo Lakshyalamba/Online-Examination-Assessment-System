@@ -6,12 +6,8 @@ import {
   requireApiUser,
 } from "@/lib/server/assessment-service";
 
-export default function ExaminerExamsPage() {
-  return <ExaminerExams />;
-}
-
-async function ExaminerExams() {
-  const user = await requireApiUser(["EXAMINER"]);
+export default async function AdminExamsPage() {
+  const user = await requireApiUser(["ADMIN"]);
   const [exams, questions, students] = await Promise.all([
     listExamsForUser(user),
     listQuestionsForUser(user),
