@@ -8,6 +8,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch, mm
 from reportlab.platypus import (
+    KeepTogether,
     PageBreak,
     Image as RLImage,
     Paragraph,
@@ -266,10 +267,18 @@ def build_story():
 
     for title, caption, filename in diagrams:
         img_path = DIAGRAM_DIR / filename
-        story.append(Paragraph(title, styles["SubHeading"] if "SubHeading" in styles.byName else styles["Heading2"]))
-        story.append(Paragraph(caption, styles["Body"]))
-        story.append(scaled_image(img_path, 6.45 * inch, 8.25 * inch))
-        story.append(Spacer(1, 0.15 * inch))
+        if filename != diagrams[0][2]:
+            story.append(PageBreak())
+        story.append(
+            KeepTogether(
+                [
+                    Paragraph(title, styles["SubHeading"] if "SubHeading" in styles.byName else styles["Heading2"]),
+                    Paragraph(caption, styles["Body"]),
+                    scaled_image(img_path, 6.45 * inch, 6.9 * inch),
+                    Spacer(1, 0.12 * inch),
+                ]
+            )
+        )
 
     story.append(PageBreak())
     story.append(Paragraph("8. Contribution Matrix", styles["SectionHeading"]))
@@ -280,7 +289,7 @@ def build_story():
         )
     )
 
-    matrix_headers = ["Teammate", "Primary focus", "Supporting work", "Project value"]
+    matrix_headers = ["Teammate", "Primary focus", "Supporting work", "Project value", "Overall role"]
     matrix_rows = [
         [
             "Yash Kumar",
