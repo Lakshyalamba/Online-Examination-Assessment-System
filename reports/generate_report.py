@@ -9,16 +9,27 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch, mm
 from reportlab.platypus import (
     PageBreak,
+    Image as RLImage,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
     Table,
     TableStyle,
 )
+from PIL import Image as PILImage
 
 
 ROOT = Path(__file__).resolve().parent
 OUTPUT = ROOT / "Online-Examination-Assessment-System-Report.pdf"
+REPO_ROOT = ROOT.parent
+DIAGRAM_DIR = REPO_ROOT / "diagrams"
+
+
+def scaled_image(path: Path, max_width: float, max_height: float):
+    with PILImage.open(path) as img:
+        width, height = img.size
+    scale = min(max_width / width, max_height / height)
+    return RLImage(str(path), width=width * scale, height=height * scale, hAlign="CENTER")
 
 
 def build_story():
@@ -84,24 +95,22 @@ def build_story():
     )
     styles.add(
         ParagraphStyle(
-            name="BulletBody",
-            parent=styles["BodyText"],
-            fontName="Helvetica",
-            fontSize=9.5,
-            leading=13,
-            leftIndent=12,
-            firstLineIndent=0,
-            spaceAfter=3,
-        )
-    )
-    styles.add(
-        ParagraphStyle(
             name="SmallNote",
             parent=styles["BodyText"],
             fontName="Helvetica-Oblique",
             fontSize=8.5,
             leading=11,
             textColor=colors.HexColor("#4b5563"),
+            alignment=TA_LEFT,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="MatrixCell",
+            parent=styles["BodyText"],
+            fontName="Helvetica",
+            fontSize=8,
+            leading=10,
             alignment=TA_LEFT,
         )
     )
@@ -132,7 +141,7 @@ def build_story():
     )
     story.append(
         Paragraph(
-            "This report summarizes the website, its architecture, major user journeys, database-backed auth flow, visual diagrams, and teammate contributions derived from commit history.",
+            "This report summarizes the website, its architecture, major user journeys, database-backed auth flow, visual diagrams, and teammate contributions derived from the commit narrative.",
             styles["SubtitleCenter"],
         )
     )
@@ -181,6 +190,7 @@ def build_story():
             [
                 "The Online Examination Assessment System is a role-based web application for managing the full lifecycle of online exams. It supports public landing pages, authenticated access, role-aware dashboards, question authoring, exam assembly, timed student attempts, grading, results, and audit-related operations.",
                 "The design goal of the project is operational clarity: each role sees only the controls and data they need, while the underlying services keep the exam state consistent and predictable. The application is not a marketing site; it is an operational assessment platform built for repeated use by administrators, examiners, and students.",
+                "The application is also designed as a presentation-ready system. The public site explains the product, the dashboard organizes work by role, and the data model supports real persistence instead of a fake in-memory demo. That makes the project suitable for both viva explanation and deployment review.",
             ],
         ),
         (
@@ -189,6 +199,7 @@ def build_story():
                 "The public side of the website introduces the platform with a hero section, a summary of capabilities, role cards, workflow highlights, and a visible team footer. The landing page is meant to explain the product quickly and to give new users a clear path into sign-in or role-based usage.",
                 "Authentication is handled through a dedicated login and signup flow. The interface supports credential-based access and a student registration path, while role guards control where a user can go after login. This prevents users from landing in pages that do not match their role.",
                 "The dashboard side uses a shared shell with a sidebar, topbar, and content surface. The shell gives each role a consistent frame for navigation, while the pages inside it focus on domain work such as question management, exam creation, student attempts, user administration, and results review.",
+                "The UI pattern is intentionally utilitarian. Controls are grouped by task, state is surfaced clearly, and route-level shells keep the experience predictable. The code also uses reusable primitives so the same layout language appears across the public and authenticated sections.",
             ],
         ),
         (
@@ -199,6 +210,7 @@ def build_story():
                 "Student assessment flow: students can discover assigned exams, open an attempt, navigate through questions, autosave answers, submit manually, or finish through timeout handling. The runtime is designed to preserve attempt state rather than treat the exam as a one-shot form.",
                 "Results and review flow: objective grading can be resolved automatically, while subjective or pending items move through a review workspace. Final results are aggregated only after readiness checks are satisfied.",
                 "Administration and reporting: admin-oriented pages cover user management, audit logs, result visibility, and reporting views so the system can be operated rather than just used.",
+                "The feature set is tied together by role-based navigation. A user does not just land on a generic dashboard; the interface is shaped by whether the person is a student, examiner, or admin, which reduces confusion and avoids exposing irrelevant actions.",
             ],
         ),
         (
@@ -207,23 +219,23 @@ def build_story():
                 "The codebase uses a layered structure. The UI calls route handlers or server actions, those call service functions, and the services talk to the database or auth provider. This keeps the route files small and makes the business rules easier to test.",
                 "A shared database pool is used for persistence, and the auth flow is adapted through NextAuth credentials integration. The services use narrow interfaces and typed payloads so each function depends only on the data it really needs.",
                 "Validation is schema-first. Question and auth inputs are defined through typed contracts, which reduces mismatch between forms, API handlers, and domain logic. The same approach is used to separate ready, draft, pending review, and published result states.",
+                "The project also relies on composition in the frontend. Shared shells, fallback states, page wrappers, and role layouts are assembled from smaller primitives instead of being copied into each screen. That lowers duplication and keeps the page structure consistent.",
             ],
         ),
         (
-            "5. Diagram Summary",
+            "5. Data Model and Persistence",
             [
-                "Use case diagram: shows the three main actors, Admin, Examiner, and Student, and the actions each one can perform. It is the quickest way to understand the permission model of the system.",
-                "Class diagram: shows the static model of the application, including users, exams, attempts, questions, options, results, and supporting service or repository abstractions.",
-                "Sequence diagrams: show the runtime behavior of student attempts and exam creation. They are useful for explaining how a request moves through authentication, validation, persistence, and state transitions.",
-                "ER diagram: shows the database relationships among users, questions, exams, attempts, answers, results, and review entities. It explains why the application can track lifecycle state rather than only final scores.",
-                "Activity diagram: presents the exam lifecycle from login and eligibility checks through attempt creation, autosave, submission, grading, and publishing.",
+                "The persistence layer is Postgres-backed and the project is structured around real entities rather than temporary state. Users, exams, questions, attempts, answers, results, and review records are persisted so the platform can survive reloads and deployments.",
+                "Authentication uses the database as the source of truth for account existence and role membership. This is important because login, signup, and route protection all need to agree on the same user state.",
+                "The student attempt flow is not a simple form submit. It carries attempt state across autosave, navigation, timeout, and final submission, which is why the repository keeps separate concepts for attempts, answers, and results.",
             ],
         ),
         (
-            "6. Technical Outcome",
+            "6. Deployment, Quality, and Maintainability",
             [
                 "The application is structured to be deployable on modern hosting platforms and to keep data and authentication real rather than mocked. The move to database-backed users and the role-based routing model make the project closer to a production assessment tool than a static demo.",
                 "The codebase also favors reusable UI primitives and shells so the public site and the dashboard remain visually consistent. This matters because the system contains several different operational screens, but they still need a single design language.",
+                "The repository also includes tests and schema validation around key flows, which helps the project stay stable as features move between auth, question authoring, grading, and reporting. That is the difference between a presentation-only demo and a maintainable application.",
             ],
         ),
     ]
@@ -235,46 +247,107 @@ def build_story():
         story.append(Spacer(1, 0.08 * inch))
 
     story.append(PageBreak())
-    story.append(Paragraph("Contribution Summary", styles["SectionHeading"]))
+    story.append(Paragraph("7. Diagram Walkthrough", styles["SectionHeading"]))
     story.append(
         Paragraph(
-            "The contribution section is intentionally placed at the end, and every teammate is described at the same level of detail.",
+            "The diagrams below capture the system from interaction, structure, runtime, and data perspectives. Each diagram is included with a short explanation so the report can stand on its own during a viva.",
             styles["Body"],
         )
     )
 
-    contributions = [
-        (
-            "Yash Kumar",
-            "Worked on the repo structure, shared UI shell, public landing and login experience, credentials-based auth flow, role guards, Vercel readiness, and later auth rendering and signup fixes. The commit history shows this work focused on the application foundation and the user-facing experience that ties the project together.",
-        ),
-        (
-            "Lakshyalamba",
-            "Shaped the initial platform direction and the assessment persistence layer, then extended that base with student attempt flows, exam discovery, question and exam management, and result-related work. The commit history also includes the normalization of diagram assets, which helped the documentation and presentation side of the project stay organized.",
-        ),
-        (
-            "Rakshita",
-            "Focused on question authoring and exam-building workflows, including validation contracts, question bank features, objective question creation, draft exam metadata, scheduling, section assembly, assignment checks, and publish readiness. This contribution is centered on turning the examination model into a structured authoring experience.",
-        ),
-        (
-            "Ravleen Singh",
-            "Built the evaluation and result side of the platform, including grading strategies, result aggregation, readiness transitions, pending review work, marks entry, publication gating, and examiner result overview flows. This work is what turns submitted attempts into managed outcomes instead of isolated records.",
-        ),
-        (
-            "Abhishek Rana",
-            "Developed the administrative side of the system through user listing, user creation and role management, audit logs, and reporting pages with chart and detail views. This contribution gives the platform operational visibility and makes it usable for staff-level oversight.",
-        ),
+    diagrams = [
+        ("Use Case Diagram", "Shows the three roles and their primary capabilities across the platform.", "01-use-case-diagram.png"),
+        ("Class Diagram", "Shows the static model of domain entities, services, and supporting abstractions.", "02-class-diagram.png"),
+        ("Sequence Diagram - Student Attempt", "Shows the request path for opening, answering, autosaving, and submitting an attempt.", "03-sequence-diagram-student-attempt.png"),
+        ("Sequence Diagram - Exam Creation", "Shows the examiner flow from draft creation to scheduling, assignment, and publish readiness.", "04-sequence-diagram-exam-creation.png"),
+        ("ER Diagram", "Shows the database relationships that keep users, exams, attempts, answers, results, and review records connected.", "05-er-diagram.png"),
+        ("Activity Diagram - Exam Flow", "Shows the end-to-end exam lifecycle from eligibility checks to grading and publishing.", "07-activity-diagram-exam-flow.png"),
     ]
 
-    for name, text in contributions:
-        story.append(Paragraph(name, styles["ContributionName"]))
-        story.append(Paragraph(text, styles["Body"]))
+    for title, caption, filename in diagrams:
+        img_path = DIAGRAM_DIR / filename
+        story.append(Paragraph(title, styles["SubHeading"] if "SubHeading" in styles.byName else styles["Heading2"]))
+        story.append(Paragraph(caption, styles["Body"]))
+        story.append(scaled_image(img_path, 6.45 * inch, 8.25 * inch))
+        story.append(Spacer(1, 0.15 * inch))
 
-    story.append(Spacer(1, 0.1 * inch))
+    story.append(PageBreak())
+    story.append(Paragraph("8. Contribution Matrix", styles["SectionHeading"]))
     story.append(
         Paragraph(
-            "Overall, the project is built as a collaborative assessment platform with distinct role ownership, shared infrastructure, and a single deployment surface. The commit history shows a balanced distribution of product, workflow, and operations work across the team.",
+            "The matrix below is qualitative and intentionally balanced. Every teammate is shown with the same structure so the report stays equal and does not rank people by count or score.",
             styles["Body"],
+        )
+    )
+
+    matrix_headers = ["Teammate", "Primary focus", "Supporting work", "Project value"]
+    matrix_rows = [
+        [
+            "Yash Kumar",
+            "Repo shell, public UI, and shared layout",
+            "Auth flow, route guards, and deployment setup",
+            "Kept login and shell behavior consistent",
+            "Established the application foundation",
+        ],
+        [
+            "Lakshyalamba",
+            "Baseline project structure and persistence",
+            "Student attempts, exam discovery, and storage",
+            "Linked exam and question management paths",
+            "Anchored the assessment engine",
+        ],
+        [
+            "Rakshita",
+            "Question validation and authoring contracts",
+            "Question bank, exam configuration, and section flows",
+            "Objective and subjective question support",
+            "Made exam creation structured and complete",
+        ],
+        [
+            "Ravleen Singh",
+            "Evaluation and result workflow",
+            "Grading strategies and review transitions",
+            "Aggregation, marks entry, and publish gating",
+            "Turned submissions into managed results",
+        ],
+        [
+            "Abhishek Rana",
+            "Admin route structure and oversight pages",
+            "User management, audit logs, and filters",
+            "Reporting views and detail analysis",
+            "Gave the platform operational visibility",
+        ],
+    ]
+    matrix_data = [[Paragraph(text, styles["MatrixCell"]) for text in matrix_headers]]
+    for row in matrix_rows:
+        matrix_data.append([Paragraph(text, styles["MatrixCell"]) for text in row])
+    matrix = Table(matrix_data, colWidths=[0.9 * inch, 1.8 * inch, 1.8 * inch, 1.8 * inch], repeatRows=1)
+    matrix.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#dbeafe")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#0f172a")),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                ("LEADING", (0, 0), (-1, -1), 10),
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#94a3b8")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#cbd5e1")),
+                ("LEFTPADDING", (0, 0), (-1, -1), 5),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                ("BACKGROUND", (0, 1), (-1, -1), colors.white),
+            ]
+        )
+    )
+    story.append(matrix)
+    story.append(Spacer(1, 0.12 * inch))
+    story.append(
+        Paragraph(
+            "The matrix is intentionally balanced: each teammate is described in the same table structure, without numeric scoring, so the report reflects collaboration rather than ranking.",
+            styles["SmallNote"],
         )
     )
 
